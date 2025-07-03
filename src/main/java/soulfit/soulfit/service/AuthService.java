@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.dto.AuthResponse;
+import soulfit.soulfit.dto.ChangeCredentialsRequest;
 import soulfit.soulfit.dto.LoginRequest;
 import soulfit.soulfit.dto.RegisterRequest;
 import soulfit.soulfit.entity.RefreshToken;
@@ -115,4 +116,36 @@ public class AuthService {
         refreshTokenService.deleteAllByUsername(username);
         logger.info("User {} logged out from all devices", username);
     }
+
+    public void changeCredentials(String currentUsername, ChangeCredentialsRequest request) {
+        User user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        String oldUsername = user.getUsername();
+
+        // 현재 비밀번호 검증
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new RuntimeException("Current password is incorrect");
+        }
+
+        // 사용자명 변경
+        if (request.getNewUsername() != null && !request.getNewUsername().equals(currentUsername)) {
+            if (userRepository.existsByUsername(request.getNewUsername())) {
+                throw new RuntimeException("New username is already taken");
+            }
+            user.setUsername(request.getNewUsername());
+        }
+
+        // 비밀번호 변경
+        if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
+            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        }
+
+        userRepository.save(user);
+
+        logout(request.getAccessToken(),oldUsername);
+
+        logger.info("User '{}' updated credentials successfully", currentUsername);
+    }
+
 }

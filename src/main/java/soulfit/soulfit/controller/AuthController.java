@@ -10,10 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.dto.*;
 import soulfit.soulfit.service.AuthService;
 
@@ -102,6 +99,23 @@ public class AuthController {
                     .body(new MessageResponse("Error: " + e.getMessage()));
         }
     }
+
+    @PutMapping("/change-credentials")
+    public ResponseEntity<?> changeCredentials(
+            @Valid @RequestBody ChangeCredentialsRequest request,
+            Authentication authentication
+    ) {
+        try {
+            String currentUsername = authentication.getName();
+            authService.changeCredentials(currentUsername, request);
+            return ResponseEntity.ok(new MessageResponse("Credentials updated successfully"));
+        } catch (Exception e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(new MessageResponse("Error: " + e.getMessage()));
+        }
+    }
+
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
