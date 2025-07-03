@@ -8,7 +8,7 @@ public class SoulfitApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(SoulfitApplication.class, args);
-		System.out.println("hi");
+
 	}
 
 }
