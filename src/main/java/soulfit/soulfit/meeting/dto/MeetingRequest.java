@@ -3,34 +3,41 @@ package soulfit.soulfit.meeting.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.meeting.domain.Location;
 import soulfit.soulfit.meeting.domain.Category;
 import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.domain.User;
+
+import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class MeetingRequest {
 
-    @NotNull
     private String title;
 
-    @NotNull
     private String description;
 
-    @NotNull
     private Category category;
 
-    private int fee;
-    private int max_participants;
+    private Location location;
+    private LocalDateTime recruitDeadline;
+    private LocalDateTime meetingTime;
 
 
-    public Meeting toEntity(User host) {
+    private Integer maxParticipants;
+    private Integer fee;
+
+
+    public Meeting toEntity(UserAuth host) {
         return Meeting.builder()
                 .title(this.title)
                 .description(this.description)
                 .category(this.category)
+                .location(this.location)
+                .recruitDeadline(this.recruitDeadline)
+                .maxParticipants(this.maxParticipants)
                 .fee(this.fee)
-                .capacity(this.max_participants)
                 .host(host)
                 .build();
     }

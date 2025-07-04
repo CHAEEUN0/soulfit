@@ -6,7 +6,9 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import soulfit.soulfit.meeting.domain.Meeting;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -36,6 +38,9 @@ public class UserAuth implements UserDetails {
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     private boolean enabled = true;
+
+    @OneToMany(mappedBy = "host", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Meeting> meetings = new ArrayList<>();
 
     // Constructors
     public UserAuth() {}
