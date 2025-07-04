@@ -16,7 +16,7 @@ import soulfit.soulfit.authentication.util.JwtUtil;
 import soulfit.soulfit.authentication.dto.AuthResponse;
 import soulfit.soulfit.authentication.entity.RefreshToken;
 import soulfit.soulfit.authentication.entity.Role;
-import soulfit.soulfit.authentication.entity.User;
+import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 
 import java.util.Date;
@@ -71,13 +71,13 @@ public class AuthService {
             throw new RuntimeException("Email is already in use!");
         }
 
-        User user = new User(
+        UserAuth userAuth = new UserAuth(
                 registerRequest.getUsername(),
                 passwordEncoder.encode(registerRequest.getPassword()),
                 registerRequest.getEmail()
         );
-        user.setRole(Role.USER);
-        userRepository.save(user);
+        userAuth.setRole(Role.USER);
+        userRepository.save(userAuth);
 
         return "User registered successfully!";
     }
@@ -118,13 +118,13 @@ public class AuthService {
     }
 
     public void changeCredentials(String currentUsername, ChangeCredentialsRequest request) {
-        User user = userRepository.findByUsername(currentUsername)
+        UserAuth userAuth = userRepository.findByUsername(currentUsername)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        String oldUsername = user.getUsername();
+        String oldUsername = userAuth.getUsername();
 
         // 현재 비밀번호 검증
-        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+        if (!passwordEncoder.matches(request.getCurrentPassword(), userAuth.getPassword())) {
             throw new RuntimeException("Current password is incorrect");
         }
 
@@ -133,15 +133,15 @@ public class AuthService {
             if (userRepository.existsByUsername(request.getNewUsername())) {
                 throw new RuntimeException("New username is already taken");
             }
-            user.setUsername(request.getNewUsername());
+            userAuth.setUsername(request.getNewUsername());
         }
 
         // 비밀번호 변경
         if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
-            user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+            userAuth.setPassword(passwordEncoder.encode(request.getNewPassword()));
         }
 
-        userRepository.save(user);
+        userRepository.save(userAuth);
 
         logout(request.getAccessToken(),oldUsername);
 
