@@ -2,25 +2,27 @@ package soulfit.soulfit.meeting.domain;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
+import lombok.Builder;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Builder
 public class Meeting {
 
     @Id @GeneratedValue
     @Column(name = "meeting_id")
     private Long id;
 
-    private String name;
+    private String title;
 
     @Lob
     private String description;
 
     //참가비
-    private int price;
+    private int fee;
 
     @Enumerated(EnumType.STRING)
     private Category category;
@@ -29,14 +31,14 @@ public class Meeting {
     private MeetingStatus status;
 
     //최대인원
-    private int capacity;
+    private int max_participants;
 
     @ManyToOne
     @JoinColumn(name = "host_id")
     private User host;
 
     @OneToMany(mappedBy = "meeting")
-    private List<MeetingMember> members = new ArrayList<>();
+    private List<MeetingParticipant> members = new ArrayList<>();
 
     @Embedded
     private Address location;

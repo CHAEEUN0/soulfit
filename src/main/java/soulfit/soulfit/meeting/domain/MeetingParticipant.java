@@ -3,8 +3,8 @@ package soulfit.soulfit.meeting.domain;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "meeting_member")
-public class MeetingMember {
+@Table(name = "meeting_participant")
+public class MeetingParticipant {
 
     @Id @GeneratedValue
     private Long id;
@@ -16,5 +16,7 @@ public class MeetingMember {
     @ManyToOne
     @JoinColumn(name = "user_id")
     private User user;
+
+    private Approvalstatus approval_status;
 
 }

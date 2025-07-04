@@ -8,4 +8,7 @@ public class Address {
     private String city;
     private String roadAddress;
     private String zipCode;
+
+    double latitude;
+    double longitude;
 }

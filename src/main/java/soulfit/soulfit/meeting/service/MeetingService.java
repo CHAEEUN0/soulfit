@@ -31,10 +31,11 @@ public class MeetingService {
                 .orElseThrow(() -> new IllegalArgumentException("모임 없음"));
     }
 
-    public Long createMeeting(MeetingRequest request, Long userId){
+    @Transactional
+    public Long createMeeting(String username, MeetingRequest request) {
+        User host = userService.getByUsername(username);
 
-        //아직
-        Meeting meeting = new Meeting();
+        Meeting meeting = request.toEntity(host);
         meetingRepository.save(meeting);
 
         return meeting.getId();
