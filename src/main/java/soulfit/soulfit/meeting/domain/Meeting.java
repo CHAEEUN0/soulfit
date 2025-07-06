@@ -30,7 +30,7 @@ public class Meeting {
     @Lob
     private String description;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "host_id")
     private UserAuth host;
 
@@ -42,15 +42,14 @@ public class Meeting {
 
     private int fee;
 
-
     @OneToMany(mappedBy = "meeting")
     @Builder.Default
     private List<MeetingParticipant> meetingParticipants = new ArrayList<>();
 
 
     private LocalDateTime meetingTime;
-    private LocalDateTime recruitDeadline;
 
+    private LocalDateTime recruitDeadline;
     private int maxParticipants;
 
     private int currentParticipants;
@@ -67,7 +66,8 @@ public class Meeting {
 
 
     public static Meeting createMeeting(MeetingRequest request, UserAuth host) {
-        Meeting meeting = request.toEntity(host);
+        Meeting meeting = request.toEntity();
+        host.addMeeting(meeting);
         meeting.setStatus(MeetingStatus.OPEN);
         meeting.setCurrentParticipants(0);
         return meeting;
@@ -90,5 +90,9 @@ public class Meeting {
 
     public void setStatus(MeetingStatus status) {
         this.status = status;
+    }
+
+    public void setHost(UserAuth host) {
+        this.host = host;
     }
 }

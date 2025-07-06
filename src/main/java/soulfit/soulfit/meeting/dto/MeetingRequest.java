@@ -1,5 +1,6 @@
 package soulfit.soulfit.meeting.dto;
 
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
@@ -24,12 +25,12 @@ public class MeetingRequest {
     private LocalDateTime recruitDeadline;
     private LocalDateTime meetingTime;
 
-
+    @Min(1)
     private Integer maxParticipants;
     private Integer fee;
 
 
-    public Meeting toEntity(UserAuth host) {
+    public Meeting toEntity() {
         return Meeting.builder()
                 .title(this.title)
                 .description(this.description)
@@ -38,7 +39,6 @@ public class MeetingRequest {
                 .recruitDeadline(this.recruitDeadline)
                 .maxParticipants(this.maxParticipants)
                 .fee(this.fee)
-                .host(host)
                 .build();
     }
 }

@@ -28,7 +28,7 @@ public class MeetingService {
     private final MeetingRepository meetingRepository;
     private final UserService userService;
 
-    @Transactional
+    @Transactional(readOnly = true)
     public List<MeetingResponse> getAllMeetings(){
         return meetingRepository.findAll().stream()
                 .map(MeetingResponse::from)
@@ -36,6 +36,7 @@ public class MeetingService {
 
     }
 
+    @Transactional(readOnly = true)
     public MeetingResponse getMeetingById(Long id){
         return meetingRepository.findById(id)
                 .map(MeetingResponse::from)
@@ -45,6 +46,8 @@ public class MeetingService {
     @Transactional
     public Long createMeeting(UserAuth host,  MeetingRequest request) {
 
+        validMeetingRequest(request);
+
         Meeting meeting = Meeting.createMeeting(request, host);
         meetingRepository.save(meeting);
 
@@ -53,13 +56,15 @@ public class MeetingService {
 
     @Transactional
     public Long updateMeeting(Long meetingId, MeetingRequest request, UserAuth user) {
-        Meeting meeting = meetingRepository.findById(meetingId)
-                .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없음"));
+        Meeting meeting = getMeetingOrThrow(meetingId);
 
 
         if (!meeting.getHost().getId().equals(user.getId())) {
             throw new AccessDeniedException("수정 권한 없음");
         }
+
+        validMeetingRequest(request);
+
         // 수정
         meeting.update(request);
         return meeting.getId();
@@ -70,8 +75,7 @@ public class MeetingService {
 
     @Transactional
     public void deleteMeeting(Long id, UserAuth user) {
-        Meeting meeting = meetingRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없음"));
+        Meeting meeting = getMeetingOrThrow(id);
 
         if (!meeting.getHost().getId().equals(user.getId())) {
             throw new AccessDeniedException("삭제 권한 없음");
@@ -81,7 +85,7 @@ public class MeetingService {
     }
 
 
-
+    @Transactional(readOnly = true)
     public List<MeetingResponse> searchMeetingsByTitle(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어를 입력해주세요.");
@@ -93,10 +97,18 @@ public class MeetingService {
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public List<MeetingResponse> filterMeetings(MeetingFilter filter) {
+
+        if (filter.getStartDate() != null && filter.getEndDate() != null) {
+            if (filter.getStartDate().isAfter(filter.getEndDate())) {
+                throw new IllegalArgumentException("시작 날짜는 종료 날짜 이전이어야 합니다.");
+            }
+        }
         LocalDateTime start = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : LocalDate.MIN.atStartOfDay();
 
         LocalDateTime end = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : LocalDate.MAX.atTime(LocalTime.MAX);
+
 
         List<Meeting> meetings = meetingRepository.filterMeetings(
                 filter.getCategory(),
@@ -108,5 +120,20 @@ public class MeetingService {
         return meetings.stream()
                 .map(MeetingResponse::from)
                 .toList();
+    }
+
+    private Meeting getMeetingOrThrow(Long id) {
+        return meetingRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없음"));
+    }
+
+    private void validMeetingRequest(MeetingRequest request) {
+        if (request.getMeetingTime().isBefore(LocalDateTime.now())){
+            throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
+        }
+
+        if (request.getRecruitDeadline().isAfter(request.getMeetingTime())){
+            throw new IllegalArgumentException("마감시간은 모임시간보다 느릴 수 없습니다.");
+        }
     }
 }

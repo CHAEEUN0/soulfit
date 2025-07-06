@@ -42,6 +42,11 @@ public class UserAuth implements UserDetails {
     @OneToMany(mappedBy = "host", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Meeting> meetings = new ArrayList<>();
 
+    public void addMeeting(Meeting meeting) {
+        meetings.add(meeting);
+        meeting.setHost(this);
+    }
+
     // Constructors
     public UserAuth() {}
 
