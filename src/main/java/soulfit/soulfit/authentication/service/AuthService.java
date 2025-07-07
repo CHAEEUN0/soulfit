@@ -1,5 +1,6 @@
 package soulfit.soulfit.authentication.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,11 +8,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.dto.ChangeCredentialsRequest;
 import soulfit.soulfit.authentication.dto.LoginRequest;
 import soulfit.soulfit.authentication.dto.RegisterRequest;
+import soulfit.soulfit.authentication.entity.AccountStatus;
 import soulfit.soulfit.authentication.util.JwtUtil;
 import soulfit.soulfit.authentication.dto.AuthResponse;
 import soulfit.soulfit.authentication.entity.RefreshToken;
@@ -146,6 +149,19 @@ public class AuthService {
         logout(request.getAccessToken(),oldUsername);
 
         logger.info("User '{}' updated credentials successfully", currentUsername);
+    }
+
+    // soft deletion
+    @Transactional
+    public void deactivateCurrentUser() {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserAuth user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUsername));
+
+        user.setEnabled(false);  // 비활성화
+        user.setAccountStatus(AccountStatus.WITHDRAWN);  // 상태를 '삭제됨'으로 변경
+
+        userRepository.save(user);
     }
 
 }
