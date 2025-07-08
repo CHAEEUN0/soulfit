@@ -1,6 +1,7 @@
 package soulfit.soulfit.meeting.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,25 +38,24 @@ public class MeetingService {
     }
 
     @Transactional(readOnly = true)
-    public MeetingResponse getMeetingById(Long id){
+    public Meeting getMeetingById(Long id) {
         return meetingRepository.findById(id)
-                .map(MeetingResponse::from)
                 .orElseThrow(() -> new IllegalArgumentException("모임 없음"));
     }
 
     @Transactional
-    public Long createMeeting(UserAuth host,  MeetingRequest request) {
+    public Meeting createMeeting(UserAuth host,  MeetingRequest request) {
 
         validMeetingRequest(request);
 
         Meeting meeting = Meeting.createMeeting(request, host);
         meetingRepository.save(meeting);
 
-        return meeting.getId();
+        return meeting;
     }
 
     @Transactional
-    public Long updateMeeting(Long meetingId, MeetingRequest request, UserAuth user) {
+    public Meeting updateMeeting(Long meetingId, MeetingRequest request, UserAuth user) {
         Meeting meeting = getMeetingOrThrow(meetingId);
 
 
@@ -65,9 +65,8 @@ public class MeetingService {
 
         validMeetingRequest(request);
 
-        // 수정
         meeting.update(request);
-        return meeting.getId();
+        return meeting;
     }
 
 

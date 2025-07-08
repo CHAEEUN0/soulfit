@@ -7,6 +7,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.dto.MeetingFilter;
 import soulfit.soulfit.meeting.dto.MeetingRequest;
 import soulfit.soulfit.meeting.dto.MeetingResponse;
@@ -46,42 +47,42 @@ public class MeetingController {
     }
 
 
-
     @GetMapping("/{id}")
-    public ResponseEntity<MeetingResponse> getMeeting(@PathVariable Long id){
-        return ResponseEntity.ok(meetingService.getMeetingById(id));
+    public ResponseEntity<MeetingResponse> getMeeting(@PathVariable Long id) {
+        Meeting meeting = meetingService.getMeetingById(id);
+        return ResponseEntity.ok(MeetingResponse.from(meeting));
     }
 
 
 
     //모임 생성
     @PostMapping
-    public ResponseEntity<Long> createMeeting(
+    public ResponseEntity<MeetingResponse> createMeeting(
             @RequestBody @Valid MeetingRequest request,
             @AuthenticationPrincipal UserAuth userAuth) {
 
-        Long meetingId = meetingService.createMeeting(userAuth, request);
+        Meeting meeting = meetingService.createMeeting(userAuth, request);
 
-        return ResponseEntity.ok(meetingId);
+        return ResponseEntity.ok(MeetingResponse.from(meeting));
     }
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<Long> updateMeeting(@PathVariable Long id,
+    public ResponseEntity<MeetingResponse> updateMeeting(@PathVariable Long id,
                                               @RequestBody @Valid MeetingRequest request,
                                               @AuthenticationPrincipal UserAuth userAuth) {
 
-        Long updatedId = meetingService.updateMeeting(id, request, userAuth);
-        return ResponseEntity.ok(updatedId);
+        Meeting updatedMeeting = meetingService.updateMeeting(id, request, userAuth);
+        return ResponseEntity.ok(MeetingResponse.from(updatedMeeting));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteMeeting(
+    public ResponseEntity<Void> deleteMeeting(
             @PathVariable Long id,
             @AuthenticationPrincipal UserAuth userAuth) {
 
         meetingService.deleteMeeting(id, userAuth);
-        return ResponseEntity.ok("삭제 완료");
+        return ResponseEntity.noContent().build();
     }
 
 
