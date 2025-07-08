@@ -57,6 +57,10 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .exceptionHandling(except -> except.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .requiresChannel(chaneel ->{
+                    chaneel.requestMatchers("/api/auth/**").requiresSecure();
+                    chaneel.anyRequest().requiresInsecure();
+                })
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(
                                 "/swagger-ui.html",
