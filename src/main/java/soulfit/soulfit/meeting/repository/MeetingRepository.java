@@ -9,11 +9,14 @@ import soulfit.soulfit.meeting.domain.Meeting;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import soulfit.soulfit.authentication.entity.UserAuth;
 
 @Repository
 public interface MeetingRepository extends JpaRepository<Meeting, Long> {
 
     List<Meeting> findByTitleContainingIgnoreCase(String keyword);
+
+    List<Meeting> findByHost(UserAuth host);
 
 
     @Query("""
