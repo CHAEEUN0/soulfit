@@ -14,6 +14,7 @@ import soulfit.soulfit.community.post.Post;
 public class PostLike {
 
     @Id @GeneratedValue
+    @Column(name = "post_like_id")
     private Long id;
 
     @ManyToOne

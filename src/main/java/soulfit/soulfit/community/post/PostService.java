@@ -41,7 +41,6 @@ public class PostService {
                 .poster(userAuth)
                 .build();
 
-
         return postRepository.save(post);
     }
 
@@ -52,7 +51,7 @@ public class PostService {
                 .orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
 
         if (!post.getPoster().getId().equals(userAuth.getId())){
-            throw new RuntimeException("삭제 권한이 업습니다.");
+            throw new RuntimeException("삭제 권한이 없습니다.");
         }
 
         post.updateContent(requestDto.getContent());
@@ -65,7 +64,7 @@ public class PostService {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
         if (!post.getPoster().getId().equals(userAuth.getId())){
-            throw new RuntimeException("삭제 권한이 업습니다.");
+            throw new RuntimeException("삭제 권한이 없습니다.");
         }
 
         postRepository.deleteById(postId);

@@ -14,6 +14,7 @@ import soulfit.soulfit.community.comment.Comment;
 public class CommentLike {
 
     @Id @GeneratedValue
+    @Column(name = "comment_like_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)

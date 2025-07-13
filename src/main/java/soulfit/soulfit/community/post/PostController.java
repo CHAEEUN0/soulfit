@@ -38,7 +38,7 @@ public class PostController {
         return ResponseEntity.ok(PostResponseDto.from(post));
     }
 
-    @GetMapping
+    @GetMapping("/user")
     public ResponseEntity<Page<PostResponseDto>> getUserPosts(@AuthenticationPrincipal UserAuth userAuth, Pageable pageable){
         Page<PostResponseDto> dtoPage= postService.findPostByUser(userAuth, pageable)
                 .map(PostResponseDto::from);
