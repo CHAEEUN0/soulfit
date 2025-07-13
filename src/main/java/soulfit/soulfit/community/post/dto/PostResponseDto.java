@@ -1,10 +1,12 @@
 package soulfit.soulfit.community.post.dto;
 
 import lombok.Builder;
+import lombok.Getter;
 import soulfit.soulfit.community.post.Post;
 
 import java.time.LocalDateTime;
 
+@Getter
 public class PostResponseDto {
 
     private Long id;

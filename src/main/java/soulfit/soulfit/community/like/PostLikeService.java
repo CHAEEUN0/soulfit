@@ -25,11 +25,13 @@ public class PostLikeService {
         Optional<PostLike> existing = postLikeRepository.findByPostAndUser(post, user);
 
         if (existing.isPresent()){
+            post.removeLike(existing.get());
             postLikeRepository.delete(existing.get());
-            post.decreaseLike();
         }else{
-            postLikeRepository.save(PostLike.builder().post(post).user(user).build());
-            post.increaseLike();
+            PostLike like = PostLike.builder().user(user).build();
+            post.addLike(like);
+            postLikeRepository.save(like);
+
         }
 
     }

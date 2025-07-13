@@ -37,7 +37,7 @@ public class CommentService {
         Comment comment = Comment.builder()
                 .content(requestDto.getContent())
                 .post(post)
-                .user(user)
+                .commenter(user)
                 .build();
 
         if (parent != null) {

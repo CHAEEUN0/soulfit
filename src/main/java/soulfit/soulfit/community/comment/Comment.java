@@ -50,11 +50,16 @@ public class Comment {
 
     private int likeCount;
 
-    public void increaseLike() {
+
+    public void addLike(CommentLike like) {
+        this.commentLikes.add(like);
+        like.setComment(this);
         this.likeCount++;
     }
 
-    public void decreaseLike() {
+    public void removeLike(CommentLike like) {
+        this.commentLikes.remove(like);
+        like.setComment(null);
         this.likeCount--;
     }
 
@@ -68,11 +73,12 @@ public class Comment {
         child.parent = this;
     }
 
-
     @Builder
-    public Comment(String content, Post post, UserAuth user) {
+    public Comment(Long id, String content, UserAuth commenter, Post post, Comment parent) {
+        this.id = id;
         this.content = content;
+        this.commenter = commenter;
         this.post = post;
-        this.commenter = user;
+        this.parent = parent;
     }
 }

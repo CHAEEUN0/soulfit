@@ -31,4 +31,7 @@ public class CommentLike {
         this.user = user;
     }
 
+    public void setComment(Comment comment) {
+        this.comment = comment;
+    }
 }

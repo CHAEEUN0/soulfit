@@ -24,14 +24,13 @@ public class CommentLikeService {
         Optional<CommentLike> existing = commentLikeRepository.findByCommentAndUser(comment, user);
 
         if (existing.isPresent()) {
+            comment.removeLike(existing.get());
             commentLikeRepository.delete(existing.get());
-            comment.decreaseLike();
         } else {
-            commentLikeRepository.save(CommentLike.builder()
-                    .comment(comment)
-                    .user(user)
-                    .build());
-            comment.increaseLike();
+            CommentLike like = CommentLike.builder().user(user).build();
+            comment.addLike(like);
+            commentLikeRepository.save(like);
+
         }
     }
 }

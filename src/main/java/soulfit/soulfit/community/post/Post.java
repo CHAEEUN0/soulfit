@@ -46,21 +46,32 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(String content, UserAuth poster) {
+    public Post(Long id, String content, UserAuth poster) {
+        this.id = id;
         this.content = content;
         this.poster = poster;
         this.likeCount = 0;
     }
 
-    public void increaseLike(){
+    public void addLike(PostLike like) {
+        this.postLikes.add(like);
+        like.setPost(this);
         this.likeCount++;
     }
 
-    public void decreaseLike(){
+    public void removeLike(PostLike like) {
+        this.postLikes.remove(like);
+        like.setPost(null);
         this.likeCount--;
     }
+
 
     public void updateContent(String content) {
         this.content = content;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
 }
