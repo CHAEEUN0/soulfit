@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 public class LoginRequest {
     @NotBlank
-    private String username;
+    private String email;
 
     @NotBlank
     private String password;
@@ -16,8 +16,8 @@ public class LoginRequest {
     // Constructors
     public LoginRequest() {}
 
-    public LoginRequest(String username, String password) {
-        this.username = username;
+    public LoginRequest(String email, String password) {
+        this.email = email;
         this.password = password;
     }
 }

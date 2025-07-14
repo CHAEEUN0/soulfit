@@ -22,6 +22,12 @@ import soulfit.soulfit.authentication.entity.Role;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 
+import soulfit.soulfit.profile.domain.Gender;
+import soulfit.soulfit.profile.domain.UserProfile;
+import soulfit.soulfit.profile.repository.UserProfileRepository;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Service
@@ -32,6 +38,9 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserProfileRepository userProfileRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -48,9 +57,12 @@ public class AuthService {
     private final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     public AuthResponse login(LoginRequest loginRequest) {
+        UserAuth userAuth = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + loginRequest.getEmail()));
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
+                        userAuth.getUsername(),
                         loginRequest.getPassword()
                 )
         );
@@ -63,7 +75,7 @@ public class AuthService {
 
         logger.info("authenticated as " + authentication.getName());
 
-        return new AuthResponse(jwt, refreshToken.getToken(), loginRequest.getUsername());
+        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername());
     }
 
     public String register(RegisterRequest registerRequest) {
@@ -80,6 +92,15 @@ public class AuthService {
                 registerRequest.getEmail()
         );
         userAuth.setRole(Role.USER);
+
+        UserProfile userProfile = new UserProfile(
+                userAuth,
+                LocalDate.parse(registerRequest.getBirthDate(), DateTimeFormatter.ISO_LOCAL_DATE),
+                Gender.valueOf(registerRequest.getGender().toUpperCase())
+        );
+
+        userAuth.setUserProfile(userProfile);
+
         userRepository.save(userAuth);
 
         return "User registered successfully!";
