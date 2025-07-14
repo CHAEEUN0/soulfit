@@ -1,0 +1,11 @@
+[
+  {
+    "content": "아침형 인간인가요?",
+    "type": "MULTIPLE",
+    "choices": ["예", "아니오"]
+  },
+  {
+    "content": "자기소개를 해주세요.",
+    "type": "TEXT"
+  }
+]
