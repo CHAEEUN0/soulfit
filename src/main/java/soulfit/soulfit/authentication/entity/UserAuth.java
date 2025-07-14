@@ -7,6 +7,7 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import soulfit.soulfit.meeting.domain.Meeting;
+import soulfit.soulfit.profile.domain.UserProfile;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,6 +42,9 @@ public class UserAuth implements UserDetails {
 
     @OneToMany(mappedBy = "host", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Meeting> meetings = new ArrayList<>();
+
+    @OneToOne(mappedBy = "userAuth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private UserProfile userProfile;
 
     public void addMeeting(Meeting meeting) {
         meetings.add(meeting);
