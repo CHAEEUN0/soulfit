@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 import soulfit.soulfit.test.domain.Choice;
-import soulfit.soulfit.test.domain.QuestionType;
+import soulfit.soulfit.test.domain.ValueQuestionType;
 import soulfit.soulfit.test.domain.TestQuestion;
 
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class QuestionResponse {
     private Long id;
     private String content;
-    private QuestionType type;
+    private ValueQuestionType type;
     private List<ChoiceDto> choices;
 
     @Getter

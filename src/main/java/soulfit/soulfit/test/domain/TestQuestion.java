@@ -26,7 +26,7 @@ public class TestQuestion {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private QuestionType type; // enum: MULTIPLE, TEXT
+    private ValueQuestionType type; // enum: MULTIPLE, TEXT
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Choice> choices = new ArrayList<>();

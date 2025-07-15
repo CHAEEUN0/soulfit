@@ -1,5 +1,5 @@
 package soulfit.soulfit.test.domain;
 
-public enum QuestionType {
+public enum ValueQuestionType {
     MULTIPLE, TEXT
 }

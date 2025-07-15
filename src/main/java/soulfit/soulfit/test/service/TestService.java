@@ -43,7 +43,7 @@ public class TestService {
         List<TestQuestion> questions = testQuestionRepository.findByTestType(testType);
 
         List<QuestionResponse> questionDtos = questions.stream().map(q -> {
-            if (q.getType() == QuestionType.MULTIPLE) {
+            if (q.getType() == ValueQuestionType.MULTIPLE) {
                 List<Choice> choices = choiceRepository.findByQuestionId(q.getId());
                 return new QuestionResponse(q, choices);
             } else {
@@ -111,7 +111,7 @@ public class TestService {
             TestQuestion q = answer.getQuestion();
 
             String selectedChoiceText = null;
-            if (q.getType() == QuestionType.MULTIPLE && answer.getSelectedChoice() != null) {
+            if (q.getType() == ValueQuestionType.MULTIPLE && answer.getSelectedChoice() != null) {
                 selectedChoiceText = answer.getSelectedChoice().getText();
             }
 

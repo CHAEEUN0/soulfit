@@ -28,7 +28,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class TestServiceIntegrationTest {
+class TestServiceTest {
 
     @Autowired
     private TestService testService;
@@ -66,7 +66,7 @@ class TestServiceIntegrationTest {
         TestQuestion q1 = new TestQuestion();
         q1.setTestType(TestType.TYPE_A);
         q1.setContent("당신은 아침형 인간입니까?");
-        q1.setType(QuestionType.MULTIPLE);
+        q1.setType(ValueQuestionType.MULTIPLE);
         testQuestionRepository.save(q1);
 
         choiceRepository.saveAll(List.of(
@@ -77,7 +77,7 @@ class TestServiceIntegrationTest {
         TestQuestion q2 = new TestQuestion();
         q2.setTestType(TestType.TYPE_A);
         q2.setContent("자신을 한 문장으로 소개해주세요.");
-        q2.setType(QuestionType.TEXT);
+        q2.setType(ValueQuestionType.TEXT);
         testQuestionRepository.save(q2);
     }
 
@@ -101,9 +101,9 @@ class TestServiceIntegrationTest {
             SubmitAnswerRequest.AnswerDto a = new SubmitAnswerRequest.AnswerDto();
             a.setQuestionId(q.getId());
 
-            if (q.getType() == QuestionType.MULTIPLE) {
+            if (q.getType() == ValueQuestionType.MULTIPLE) {
                 a.setSelectedChoiceId(q.getChoices().get(0).getId()); // 첫 번째 보기 선택
-            } else if (q.getType() == QuestionType.TEXT) {
+            } else if (q.getType() == ValueQuestionType.TEXT) {
                 a.setAnswerText("나는 긍정적인 사람입니다.");
             }
 
