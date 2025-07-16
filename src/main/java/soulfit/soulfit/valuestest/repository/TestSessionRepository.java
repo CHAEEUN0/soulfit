@@ -1,9 +1,9 @@
-package soulfit.soulfit.test.repository;
+package soulfit.soulfit.valuestest.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import soulfit.soulfit.test.domain.SessionStatus;
-import soulfit.soulfit.test.domain.TestSession;
-import soulfit.soulfit.test.domain.TestType;
+import soulfit.soulfit.valuestest.domain.SessionStatus;
+import soulfit.soulfit.valuestest.domain.TestSession;
+import soulfit.soulfit.valuestest.domain.TestType;
 
 import java.util.List;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package soulfit.soulfit.test.domain;
+package soulfit.soulfit.valuestest.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

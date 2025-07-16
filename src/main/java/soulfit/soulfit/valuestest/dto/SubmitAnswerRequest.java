@@ -1,4 +1,4 @@
-package soulfit.soulfit.test.dto;
+package soulfit.soulfit.valuestest.dto;
 
 import lombok.Data;
 

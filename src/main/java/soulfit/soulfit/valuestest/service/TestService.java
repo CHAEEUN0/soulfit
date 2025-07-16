@@ -1,19 +1,20 @@
-package soulfit.soulfit.test.service;
+package soulfit.soulfit.valuestest.service;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.test.domain.*;
-import soulfit.soulfit.test.dto.*;
-import soulfit.soulfit.test.repository.ChoiceRepository;
-import soulfit.soulfit.test.repository.TestAnswerRepository;
-import soulfit.soulfit.test.repository.TestQuestionRepository;
-import soulfit.soulfit.test.repository.TestSessionRepository;
+import soulfit.soulfit.valuestest.domain.*;
+import soulfit.soulfit.valuestest.dto.*;
+import soulfit.soulfit.valuestest.repository.ChoiceRepository;
+import soulfit.soulfit.valuestest.repository.TestAnswerRepository;
+import soulfit.soulfit.valuestest.repository.TestQuestionRepository;
+import soulfit.soulfit.valuestest.repository.TestSessionRepository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 @Service
@@ -110,16 +111,39 @@ public class TestService {
         List<TestAnswerResponse> answerDtos = answers.stream().map(answer -> {
             TestQuestion q = answer.getQuestion();
 
-            String selectedChoiceText = null;
-            if (q.getType() == ValueQuestionType.MULTIPLE && answer.getSelectedChoice() != null) {
-                selectedChoiceText = answer.getSelectedChoice().getText();
+            List<ChoiceResponse> choiceDtos = null;
+            Long selectedChoiceId = null;
+
+            if (q.getType() == ValueQuestionType.MULTIPLE) {
+                // 질문에 해당하는 모든 선택지 조회 (DB의 PK 순서대로 정렬된다고 가정)
+                List<Choice> choices = choiceRepository.findByQuestionId(q.getId());
+
+                // choiceId를 1부터 시작하는 상대적인 값으로 변환
+                final AtomicLong counter = new AtomicLong(1);
+                choiceDtos = choices.stream()
+                        .map(c -> new ChoiceResponse(counter.getAndIncrement(), c.getText()))
+                        .collect(Collectors.toList());
+
+                // 사용자가 선택한 choice의 상대적인 ID를 찾음
+//                if (answer.getSelectedChoice() != null) {
+//                    long dbSelectedId = answer.getSelectedChoice().getId();
+//                    for (int i = 0; i < choices.size(); i++) {
+//                        if (choices.get(i).getId().equals(dbSelectedId)) {
+//                            selectedChoiceId = (long) i + 1;
+//                            break;
+//                        }
+//                    }
+//                }
+
+                selectedChoiceId = answer.getSelectedChoice().getId();
             }
 
             return new TestAnswerResponse(
                     q.getId(),
                     q.getContent(),
                     q.getType(),
-                    selectedChoiceText,
+                    choiceDtos, // 전체 선택지 목록
+                    selectedChoiceId, // 선택된 선택지 ID
                     answer.getAnswerText()
             );
         }).collect(Collectors.toList());

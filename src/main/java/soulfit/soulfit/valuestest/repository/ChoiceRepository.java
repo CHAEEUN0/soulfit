@@ -1,7 +1,7 @@
-package soulfit.soulfit.test.repository;
+package soulfit.soulfit.valuestest.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import soulfit.soulfit.test.domain.Choice;
+import soulfit.soulfit.valuestest.domain.Choice;
 
 import java.util.List;
 

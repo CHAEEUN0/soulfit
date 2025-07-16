@@ -15,12 +15,12 @@ import soulfit.soulfit.meeting.domain.*;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingQuestionRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
-import soulfit.soulfit.test.domain.Choice;
-import soulfit.soulfit.test.domain.TestQuestion;
-import soulfit.soulfit.test.domain.TestType;
-import soulfit.soulfit.test.domain.ValueQuestionType;
-import soulfit.soulfit.test.repository.ChoiceRepository;
-import soulfit.soulfit.test.repository.TestQuestionRepository;
+import soulfit.soulfit.valuestest.domain.Choice;
+import soulfit.soulfit.valuestest.domain.TestQuestion;
+import soulfit.soulfit.valuestest.domain.TestType;
+import soulfit.soulfit.valuestest.domain.ValueQuestionType;
+import soulfit.soulfit.valuestest.repository.ChoiceRepository;
+import soulfit.soulfit.valuestest.repository.TestQuestionRepository;
 
 import java.io.IOException;
 import java.io.InputStream;

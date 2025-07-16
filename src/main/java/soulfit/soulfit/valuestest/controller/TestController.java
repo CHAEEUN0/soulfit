@@ -1,15 +1,15 @@
-package soulfit.soulfit.test.controller;
+package soulfit.soulfit.valuestest.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.test.domain.TestType;
-import soulfit.soulfit.test.dto.StartTestSessionResponse;
-import soulfit.soulfit.test.dto.SubmitAnswerRequest;
-import soulfit.soulfit.test.dto.UserTestResult;
-import soulfit.soulfit.test.service.TestService;
+import soulfit.soulfit.valuestest.domain.TestType;
+import soulfit.soulfit.valuestest.dto.StartTestSessionResponse;
+import soulfit.soulfit.valuestest.dto.SubmitAnswerRequest;
+import soulfit.soulfit.valuestest.dto.UserTestResult;
+import soulfit.soulfit.valuestest.service.TestService;
 
 @RestController
 @RequiredArgsConstructor

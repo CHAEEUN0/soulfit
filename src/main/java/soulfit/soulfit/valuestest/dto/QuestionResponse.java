@@ -1,11 +1,11 @@
-package soulfit.soulfit.test.dto;
+package soulfit.soulfit.valuestest.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
-import soulfit.soulfit.test.domain.Choice;
-import soulfit.soulfit.test.domain.ValueQuestionType;
-import soulfit.soulfit.test.domain.TestQuestion;
+import soulfit.soulfit.valuestest.domain.Choice;
+import soulfit.soulfit.valuestest.domain.ValueQuestionType;
+import soulfit.soulfit.valuestest.domain.TestQuestion;
 
 import java.util.ArrayList;
 import java.util.List;
