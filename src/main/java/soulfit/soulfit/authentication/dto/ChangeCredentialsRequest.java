@@ -14,7 +14,5 @@ public class ChangeCredentialsRequest {
     @NotBlank
     private String accessToken;
 
-    private String newUsername; // 선택사항
     private String newPassword; // 선택사항
-
 }
