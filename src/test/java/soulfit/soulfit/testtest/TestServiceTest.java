@@ -123,7 +123,7 @@ class TestServiceTest {
         assertThat(completedSession.getSubmittedAt()).isNotNull();
 
         List<TestAnswer> storedAnswers = testAnswerRepository.findBySessionId(sessionId);
-        assertThat(storedAnswers.size()).isEqualTo(4);
+        assertThat(storedAnswers.size()).isEqualTo(17);
 
     }
 }

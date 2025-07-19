@@ -75,7 +75,7 @@ public class AuthService {
 
         logger.info("authenticated as " + authentication.getName());
 
-        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername());
+        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername(), userAuth.getEmail());
     }
 
     public String register(RegisterRequest registerRequest) {
@@ -112,7 +112,8 @@ public class AuthService {
                 .map(RefreshToken::getUsername)
                 .map(username -> {
                     String newAccessToken = jwtUtil.generateToken(username);
-                    return new AuthResponse(newAccessToken, refreshTokenStr, username);
+                    String email = userRepository.findByUsername(username).get().getEmail();
+                    return new AuthResponse(newAccessToken, refreshTokenStr,username,email);
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
@@ -150,14 +151,6 @@ public class AuthService {
         // 현재 비밀번호 검증
         if (!passwordEncoder.matches(request.getCurrentPassword(), userAuth.getPassword())) {
             throw new RuntimeException("Current password is incorrect");
-        }
-
-        // 사용자명 변경
-        if (request.getNewUsername() != null && !request.getNewUsername().equals(currentUsername)) {
-            if (userRepository.existsByUsername(request.getNewUsername())) {
-                throw new RuntimeException("New username is already taken");
-            }
-            userAuth.setUsername(request.getNewUsername());
         }
 
         // 비밀번호 변경
