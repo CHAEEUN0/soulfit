@@ -21,22 +21,31 @@ import java.util.List;
 @EntityListeners(AuditingEntityListener.class)
 public class Post {
 
-    @Id @GeneratedValue
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "post_id")
     private Long id;
+
+    @Enumerated(EnumType.STRING)
+    private PostCategory postCategory;
 
     @Lob
     private String content;
 
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostImage> images = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "poster_id")
     private UserAuth poster;
 
     private int likeCount;
+    private int bookmarkCount;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PostLike> postLikes = new ArrayList<>();
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<PostBookmark> postBookmarks = new ArrayList<>();
 
     @CreatedDate
     @Column(updatable = false)
@@ -46,11 +55,13 @@ public class Post {
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(Long id, String content, UserAuth poster) {
+    public Post(Long id, String content, UserAuth poster, PostCategory category) {
         this.id = id;
         this.content = content;
         this.poster = poster;
+        this.postCategory = category;
         this.likeCount = 0;
+        this.bookmarkCount = 0;
     }
 
     public void addLike(PostLike like) {
@@ -63,6 +74,18 @@ public class Post {
         this.postLikes.remove(like);
         like.setPost(null);
         this.likeCount--;
+    }
+
+    public void addBookmark(PostBookmark bookmark){
+        this.postBookmarks.add(bookmark);
+        bookmark.setPost(this);
+        this.bookmarkCount++;
+    }
+
+    public void removeBookmark(PostBookmark bookmark){
+        this.getPostBookmarks().remove(this);
+        bookmark.setPost(null);
+        this.bookmarkCount--;
     }
 
 

@@ -12,6 +12,12 @@ import java.util.List;
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findAll(Pageable pageable);
-    Page<Post> findAllByPoster(UserAuth poster, Pageable pageable);
+
+    Page<Post> findAllByPosterOrderByCreatedAtDesc(UserAuth poster, Pageable pageable);
+
+    Page<Post> findByPostCategoryOrderByCreatedAtDesc(PostCategory category, Pageable pageable);
+    Page<Post> findByPostCategoryOrderByLikeCountDesc(PostCategory category, Pageable pageable);
+
+
 }
 
