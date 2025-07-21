@@ -48,7 +48,7 @@ public class NotificationServiceTest {
         // 알림 2개 생성
         notificationRepository.save(Notification.builder()
                 .receiver(testUser)
-                .type(NotificationType.TYPE_A)
+                .type(NotificationType.COMMENT)
                 .title("알림 1")
                 .body("본문 1")
                 .isRead(false)
@@ -56,7 +56,7 @@ public class NotificationServiceTest {
 
         notificationRepository.save(Notification.builder()
                 .receiver(testUser)
-                .type(NotificationType.TYPE_B)
+                .type(NotificationType.JOIN_MEETING)
                 .title("알림 2")
                 .body("본문 2")
                 .isRead(false)

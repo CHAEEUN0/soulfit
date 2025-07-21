@@ -26,7 +26,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-public class notificationcontrollertest2 {
+public class NotificationControllerTest2 {
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,7 +57,7 @@ public class notificationcontrollertest2 {
 
         notificationRepository.save(Notification.builder()
                 .receiver(testUser)
-                .type(NotificationType.TYPE_A)
+                .type(NotificationType.COMMENT)
                 .title("테스트 알림")
                 .body("본문 내용")
                 .isRead(false)

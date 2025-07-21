@@ -1,9 +1,14 @@
 package soulfit.soulfit.notification.service;
 // NotificationService.java
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.notification.domain.Notification;
+import soulfit.soulfit.notification.domain.NotificationType;
 import soulfit.soulfit.notification.dto.NotificationResponse;
 import soulfit.soulfit.notification.repository.NotificationRepository;
 
@@ -14,7 +19,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class NotificationService {
 
+    private final UserRepository userRepository;
+
     private final NotificationRepository notificationRepository;
+
+    Logger logger = LoggerFactory.getLogger(NotificationService.class);
 
     // 1. 알림 목록 조회
     @Transactional(readOnly = true)
@@ -29,6 +38,8 @@ public class NotificationService {
     public void markAsRead(Long notificationId, Long userId) {
         Notification notification = findNotificationForUser(notificationId, userId);
         notification.markAsRead();
+
+        logger.info("Notification "+notificationId +" marked as read");
     }
 
     // 3. 전체 읽음 처리
@@ -36,6 +47,8 @@ public class NotificationService {
     public void markAllAsRead(Long receiverId) {
         List<Notification> unreadList = notificationRepository.findByReceiverIdAndIsReadFalse(receiverId);
         unreadList.forEach(Notification::markAsRead);
+
+        logger.info("All Notifications marked as read, size : ("+unreadList.size()+")");
     }
 
     // 4. 단건 알림 삭제
@@ -62,5 +75,24 @@ public class NotificationService {
                 .createdAt(notification.getCreatedAt().toString())
                 .build();
     }
+
+
+    @Transactional
+    public void sendNotification(Long receiverId, NotificationType type, String title, String body, Long targetId) {
+        UserAuth receiver = userRepository.findById(receiverId)
+                .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+
+        Notification notification = Notification.builder()
+                .receiver(receiver)
+                .type(type)
+                .title(title)
+                .body(body)
+                .targetId(targetId)
+                .isRead(false)
+                .build();
+
+        notificationRepository.save(notification);
+    }
+
 }
 
