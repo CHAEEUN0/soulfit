@@ -12,6 +12,8 @@ import soulfit.soulfit.meeting.dto.MeetingApplicantDto;
 import soulfit.soulfit.meeting.dto.MeetingQuestionDto;
 import soulfit.soulfit.meeting.dto.MeetingResponse;
 import soulfit.soulfit.meeting.repository.*;
+import soulfit.soulfit.notification.domain.NotificationType;
+import soulfit.soulfit.notification.service.NotificationService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -28,6 +30,7 @@ public class MeetingApplyService {
     private final MeetingAnswerRepository meetingAnswerRepository;
     private final MeetingParticipantRepository meetingParticipantRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     public void addMeetingQuestions(Long meetingId, MeetingQuestionDto.Request request) {
         Meeting meeting = meetingRepository.findById(meetingId)
@@ -126,6 +129,17 @@ public class MeetingApplyService {
         participant.setJoined_at(LocalDateTime.now());
 
         meetingParticipantRepository.save(participant);
+
+        Long hostId = meeting.getHost().getId();
+
+        notificationService.sendNotification(
+                hostId,
+                NotificationType.JOIN_MEETING,
+                "user joined!",
+                "user" + user.getUsername() + " has joined your meeting[" + meeting.getTitle()+"]",
+                meeting.getId()
+        );
+
     }
 
     public void approveMeetingApplication(Long meetingId, Long userId) {
