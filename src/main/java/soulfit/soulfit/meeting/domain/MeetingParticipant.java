@@ -2,14 +2,18 @@ package soulfit.soulfit.meeting.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import soulfit.soulfit.authentication.entity.UserAuth;
 
 import java.time.LocalDateTime;
 
 @Entity
+@Getter
+@Setter
 @Table(name = "meeting_participant")
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 public class MeetingParticipant {
 
     @Id @GeneratedValue
@@ -30,5 +34,11 @@ public class MeetingParticipant {
     private String rejected_reason;
     private boolean reviewed;
 
-
+    public void approve() {
+        if (this.approval_status != Approvalstatus.PENDING) {
+            throw new IllegalStateException("Participant status is not PENDING. Cannot approve.");
+        }
+        this.approval_status = Approvalstatus.APPROVED;
+        this.approved_at = LocalDateTime.now();
+    }
 }

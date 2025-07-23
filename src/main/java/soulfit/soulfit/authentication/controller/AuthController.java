@@ -116,6 +116,12 @@ public class AuthController {
         }
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<String> deleteMyAccount() {
+        authService.deactivateCurrentUser();
+        return ResponseEntity.ok("회원 탈퇴가 완료되었습니다.");
+    }
+
 
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");

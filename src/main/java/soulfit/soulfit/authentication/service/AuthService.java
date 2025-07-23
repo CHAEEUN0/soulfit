@@ -1,5 +1,6 @@
 package soulfit.soulfit.authentication.service;
 
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -7,11 +8,13 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.dto.ChangeCredentialsRequest;
 import soulfit.soulfit.authentication.dto.LoginRequest;
 import soulfit.soulfit.authentication.dto.RegisterRequest;
+import soulfit.soulfit.authentication.entity.AccountStatus;
 import soulfit.soulfit.authentication.util.JwtUtil;
 import soulfit.soulfit.authentication.dto.AuthResponse;
 import soulfit.soulfit.authentication.entity.RefreshToken;
@@ -19,6 +22,12 @@ import soulfit.soulfit.authentication.entity.Role;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 
+import soulfit.soulfit.profile.domain.Gender;
+import soulfit.soulfit.profile.domain.UserProfile;
+import soulfit.soulfit.profile.repository.UserProfileRepository;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 @Service
@@ -29,6 +38,9 @@ public class AuthService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserProfileRepository userProfileRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -45,9 +57,12 @@ public class AuthService {
     private final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     public AuthResponse login(LoginRequest loginRequest) {
+        UserAuth userAuth = userRepository.findByEmail(loginRequest.getEmail())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + loginRequest.getEmail()));
+
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
-                        loginRequest.getUsername(),
+                        userAuth.getUsername(),
                         loginRequest.getPassword()
                 )
         );
@@ -60,7 +75,7 @@ public class AuthService {
 
         logger.info("authenticated as " + authentication.getName());
 
-        return new AuthResponse(jwt, refreshToken.getToken(), loginRequest.getUsername());
+        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername(), userAuth.getEmail());
     }
 
     public String register(RegisterRequest registerRequest) {
@@ -77,6 +92,15 @@ public class AuthService {
                 registerRequest.getEmail()
         );
         userAuth.setRole(Role.USER);
+
+        UserProfile userProfile = new UserProfile(
+                userAuth,
+                LocalDate.parse(registerRequest.getBirthDate(), DateTimeFormatter.ISO_LOCAL_DATE),
+                Gender.valueOf(registerRequest.getGender().toUpperCase())
+        );
+
+        userAuth.setUserProfile(userProfile);
+
         userRepository.save(userAuth);
 
         return "User registered successfully!";
@@ -88,7 +112,8 @@ public class AuthService {
                 .map(RefreshToken::getUsername)
                 .map(username -> {
                     String newAccessToken = jwtUtil.generateToken(username);
-                    return new AuthResponse(newAccessToken, refreshTokenStr, username);
+                    String email = userRepository.findByUsername(username).get().getEmail();
+                    return new AuthResponse(newAccessToken, refreshTokenStr,username,email);
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
@@ -128,14 +153,6 @@ public class AuthService {
             throw new RuntimeException("Current password is incorrect");
         }
 
-        // 사용자명 변경
-        if (request.getNewUsername() != null && !request.getNewUsername().equals(currentUsername)) {
-            if (userRepository.existsByUsername(request.getNewUsername())) {
-                throw new RuntimeException("New username is already taken");
-            }
-            userAuth.setUsername(request.getNewUsername());
-        }
-
         // 비밀번호 변경
         if (request.getNewPassword() != null && !request.getNewPassword().isEmpty()) {
             userAuth.setPassword(passwordEncoder.encode(request.getNewPassword()));
@@ -146,6 +163,19 @@ public class AuthService {
         logout(request.getAccessToken(),oldUsername);
 
         logger.info("User '{}' updated credentials successfully", currentUsername);
+    }
+
+    // soft deletion
+    @Transactional
+    public void deactivateCurrentUser() {
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        UserAuth user = userRepository.findByUsername(currentUsername)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found: " + currentUsername));
+
+        user.setEnabled(false);  // 비활성화
+        user.setAccountStatus(AccountStatus.WITHDRAWN);  // 상태를 '삭제됨'으로 변경
+
+        userRepository.save(user);
     }
 
 }

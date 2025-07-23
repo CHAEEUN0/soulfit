@@ -23,6 +23,9 @@ public class RegisterRequest {
     @Email
     private String email;
 
+    private String birthDate;
+    private String gender;
+
     // Constructors
     public RegisterRequest() {}
 

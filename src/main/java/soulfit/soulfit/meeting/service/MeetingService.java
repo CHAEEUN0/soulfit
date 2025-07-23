@@ -1,35 +1,32 @@
 package soulfit.soulfit.meeting.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.authentication.service.UserService;
+import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.domain.MeetingStatus;
 import soulfit.soulfit.meeting.dto.MeetingFilter;
 import soulfit.soulfit.meeting.dto.MeetingRequest;
 import soulfit.soulfit.meeting.dto.MeetingResponse;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class MeetingService {
 
     private final MeetingRepository meetingRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
 
-    @Transactional(readOnly = true)
     public List<MeetingResponse> getAllMeetings(){
         return meetingRepository.findAll().stream()
                 .map(MeetingResponse::from)
@@ -37,18 +34,21 @@ public class MeetingService {
 
     }
 
-    @Transactional(readOnly = true)
     public Meeting getMeetingById(Long id) {
         return meetingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("모임 없음"));
     }
 
     @Transactional
-    public Meeting createMeeting(UserAuth host,  MeetingRequest request) {
+    public Meeting createMeeting(UserAuth userAuth, MeetingRequest request) {
+        // 1. 준영속 userAuth의 id를 이용해 영속 상태의 user를 다시 조회한다.
+        UserAuth managedUser = userRepository.findById(userAuth.getId())
+                .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userAuth.getId()));
 
         validMeetingRequest(request);
 
-        Meeting meeting = Meeting.createMeeting(request, host);
+        // 2. 영속 상태의 managedUser를 사용해 연관관계를 설정한다.
+        Meeting meeting = Meeting.createMeeting(request, managedUser);
         meetingRepository.save(meeting);
 
         return meeting;
@@ -57,7 +57,6 @@ public class MeetingService {
     @Transactional
     public Meeting updateMeeting(Long meetingId, MeetingRequest request, UserAuth user) {
         Meeting meeting = getMeetingOrThrow(meetingId);
-
 
         if (!meeting.getHost().getId().equals(user.getId())) {
             throw new AccessDeniedException("수정 권한 없음");
@@ -68,9 +67,6 @@ public class MeetingService {
         meeting.update(request);
         return meeting;
     }
-
-
-
 
     @Transactional
     public void deleteMeeting(Long id, UserAuth user) {
@@ -83,8 +79,6 @@ public class MeetingService {
         meetingRepository.delete(meeting);
     }
 
-
-    @Transactional(readOnly = true)
     public List<MeetingResponse> searchMeetingsByTitle(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어를 입력해주세요.");
@@ -96,7 +90,6 @@ public class MeetingService {
                 .toList();
     }
 
-    @Transactional(readOnly = true)
     public List<MeetingResponse> filterMeetings(MeetingFilter filter) {
 
         if (filter.getStartDate() != null && filter.getEndDate() != null) {
@@ -107,7 +100,6 @@ public class MeetingService {
         LocalDateTime start = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : LocalDate.MIN.atStartOfDay();
 
         LocalDateTime end = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : LocalDate.MAX.atTime(LocalTime.MAX);
-
 
         List<Meeting> meetings = meetingRepository.filterMeetings(
                 filter.getCategory(),

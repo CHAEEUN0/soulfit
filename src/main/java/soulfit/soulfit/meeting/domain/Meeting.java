@@ -46,6 +46,10 @@ public class Meeting {
     @Builder.Default
     private List<MeetingParticipant> meetingParticipants = new ArrayList<>();
 
+    @OneToMany(mappedBy = "meeting", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<MeetingQuestion> questions = new ArrayList<>();
+
 
     private LocalDateTime meetingTime;
 
@@ -94,5 +98,12 @@ public class Meeting {
 
     public void setHost(UserAuth host) {
         this.host = host;
+    }
+
+    public void addParticipant() {
+        if (this.currentParticipants >= this.maxParticipants) {
+            throw new IllegalStateException("Meeting has reached its maximum participants.");
+        }
+        this.currentParticipants++;
     }
 }
