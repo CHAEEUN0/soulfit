@@ -25,9 +25,12 @@ import java.util.List;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
+import org.springframework.test.context.ActiveProfiles;
+
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
+@ActiveProfiles("test")
 class TestServiceTest {
 
     @Autowired
@@ -52,7 +55,14 @@ class TestServiceTest {
 
     @BeforeEach
     void setUp() {
-        // 테스트용 사용자 저장
+        // Clear repositories to ensure test isolation
+        testAnswerRepository.deleteAllInBatch();
+        testSessionRepository.deleteAllInBatch();
+        choiceRepository.deleteAllInBatch();
+        testQuestionRepository.deleteAllInBatch();
+        userAuthRepository.deleteAllInBatch();
+
+        // Setup test user
         testUser = new UserAuth();
         testUser.setUsername("testuser");
         testUser.setPassword("password");
@@ -62,23 +72,26 @@ class TestServiceTest {
         testUser.setEnabled(true);
         userAuthRepository.save(testUser);
 
-        // 테스트 질문 및 선택지 세팅
-        TestQuestion q1 = new TestQuestion();
-        q1.setTestType(TestType.TYPE_A);
-        q1.setContent("당신은 아침형 인간입니까?");
-        q1.setType(ValueQuestionType.MULTIPLE);
-        testQuestionRepository.save(q1);
+        // Setup 15 test questions and choices to ensure deterministic test data
+        List<TestQuestion> questions = new ArrayList<>();
+        for (int i = 1; i <= 15; i++) {
+            TestQuestion q = new TestQuestion();
+            q.setTestType(TestType.TYPE_A);
+            q.setContent("Test Question " + i);
+            // Create 10 multiple choice and 5 text questions
+            q.setType(i <= 10 ? ValueQuestionType.MULTIPLE : ValueQuestionType.TEXT);
+            questions.add(q);
+        }
+        testQuestionRepository.saveAll(questions);
 
-        choiceRepository.saveAll(List.of(
-                createChoice(q1, "예"),
-                createChoice(q1, "아니오")
-        ));
-
-        TestQuestion q2 = new TestQuestion();
-        q2.setTestType(TestType.TYPE_A);
-        q2.setContent("자신을 한 문장으로 소개해주세요.");
-        q2.setType(ValueQuestionType.TEXT);
-        testQuestionRepository.save(q2);
+        List<Choice> choices = new ArrayList<>();
+        for (TestQuestion q : questions) {
+            if (q.getType() == ValueQuestionType.MULTIPLE) {
+                choices.add(createChoice(q, "Yes"));
+                choices.add(createChoice(q, "No"));
+            }
+        }
+        choiceRepository.saveAll(choices);
     }
 
     private Choice createChoice(TestQuestion question, String text) {
@@ -102,6 +115,7 @@ class TestServiceTest {
             a.setQuestionId(q.getId());
 
             if (q.getType() == ValueQuestionType.MULTIPLE) {
+                System.out.println("malsdfasdfj");
                 a.setSelectedChoiceId(q.getChoices().get(0).getId()); // 첫 번째 보기 선택
             } else if (q.getType() == ValueQuestionType.TEXT) {
                 a.setAnswerText("나는 긍정적인 사람입니다.");
@@ -123,7 +137,7 @@ class TestServiceTest {
         assertThat(completedSession.getSubmittedAt()).isNotNull();
 
         List<TestAnswer> storedAnswers = testAnswerRepository.findBySessionId(sessionId);
-        assertThat(storedAnswers.size()).isEqualTo(17);
+        assertThat(storedAnswers.size()).isEqualTo(15);
 
     }
 }
