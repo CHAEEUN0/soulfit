@@ -8,6 +8,7 @@ import soulfit.soulfit.community.post.PostCategory;
 import soulfit.soulfit.community.post.PostImage;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,11 +22,11 @@ public class PostResponseDto {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private List<String> imageUrls;
-    private PostCategory category;
+    private PostCategory postCategory;
 
 
     @Builder
-    public PostResponseDto(Long id, String content, String posterUsername, int likeCount, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> imageUrls, PostCategory category) {
+    public PostResponseDto(Long id, String content, String posterUsername, int likeCount, LocalDateTime createdAt, LocalDateTime updatedAt, List<String> imageUrls, PostCategory postCategory) {
         this.id = id;
         this.content = content;
         this.posterUsername = posterUsername;
@@ -33,15 +34,18 @@ public class PostResponseDto {
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.imageUrls = imageUrls;
-        this.category = category;
+        this.postCategory = postCategory;
     }
 
 
 
     public static PostResponseDto from(Post post) {
-        List<String> imageUrls = post.getImages().stream()
+
+        List<String> imageUrls = post.getImages() != null
+                ? post.getImages().stream()
                 .map(PostImage::getImageUrl)
-                .collect(Collectors.toList());
+                .collect(Collectors.toList())
+                : Collections.emptyList();
 
         return PostResponseDto.builder()
                 .id(post.getId())
@@ -51,6 +55,7 @@ public class PostResponseDto {
                 .createdAt(post.getCreatedAt())
                 .updatedAt(post.getUpdatedAt())
                 .imageUrls(imageUrls)
+                .postCategory(post.getPostCategory())
                 .build();
     }
 }

@@ -51,15 +51,14 @@ public class Post {
     @Column(updatable = false)
     private LocalDateTime createdAt;
 
-    @LastModifiedDate
     private LocalDateTime updatedAt;
 
     @Builder
-    public Post(Long id, String content, UserAuth poster, PostCategory category) {
+    public Post(Long id, String content, UserAuth poster, PostCategory postCategory) {
         this.id = id;
         this.content = content;
         this.poster = poster;
-        this.postCategory = category;
+        this.postCategory = postCategory;
         this.likeCount = 0;
         this.bookmarkCount = 0;
     }
@@ -83,7 +82,7 @@ public class Post {
     }
 
     public void removeBookmark(PostBookmark bookmark){
-        this.getPostBookmarks().remove(this);
+        this.getPostBookmarks().remove(bookmark);
         bookmark.setPost(null);
         this.bookmarkCount--;
     }
@@ -91,10 +90,14 @@ public class Post {
 
     public void updateContent(String content) {
         this.content = content;
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void setId(Long id) {
         this.id = id;
     }
 
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
+    }
 }

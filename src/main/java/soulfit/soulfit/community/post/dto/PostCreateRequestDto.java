@@ -4,12 +4,16 @@ package soulfit.soulfit.community.post.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.community.post.PostCategory;
 
 import java.util.List;
 
 @Getter
+@Setter
+@NoArgsConstructor
 public class PostCreateRequestDto {
 
     @NotNull
@@ -17,11 +21,11 @@ public class PostCreateRequestDto {
 
     private List<MultipartFile> images;
 
-    private PostCategory category;
+    private PostCategory postCategory;
 
     @Builder
-    public PostCreateRequestDto(PostCategory category, String content, List<MultipartFile> images) {
-        this.category = category;
+    public PostCreateRequestDto(PostCategory postCategory, String content, List<MultipartFile> images) {
+        this.postCategory = postCategory;
         this.content = content;
         this.images = images;
     }

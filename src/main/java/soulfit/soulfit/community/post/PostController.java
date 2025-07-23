@@ -10,7 +10,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.community.post.dto.PostCreateRequestDto;
 import soulfit.soulfit.community.post.dto.PostResponseDto;
@@ -25,8 +24,6 @@ public class PostController {
     private final PostService postService;
     private final PostLikeService postLikeService;
     private final PostBookmarkService postBookmarkService;
-
-
 
     //전체 조회
     @GetMapping
@@ -107,7 +104,7 @@ public class PostController {
     @PostMapping("/{postId}/bookmarks")
     public ResponseEntity<Void> toggleBookMark(@PathVariable Long postId,
                                                @AuthenticationPrincipal UserAuth user) {
-        postBookmarkService.bookmarkOrUnbookmark(postId, user);
+        postBookmarkService.bookmarkOrUnBookmark(postId, user);
         return ResponseEntity.noContent().build();
     }
 }

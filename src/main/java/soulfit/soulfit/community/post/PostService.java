@@ -12,6 +12,7 @@ import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.community.post.dto.PostCreateRequestDto;
 import soulfit.soulfit.community.post.dto.PostUpdateRequestDto;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -21,7 +22,7 @@ import java.util.UUID;
 public class PostService {
 
     private final PostRepository postRepository;
-    private S3Uploader s3uploader;
+    private final S3Uploader s3uploader;
 
     @Transactional(readOnly = true)
     public Page<Post> findAllPosts(Pageable pageable) {
@@ -57,7 +58,7 @@ public class PostService {
         Post post = Post.builder().
                 content(requestDto.getContent())
                 .poster(userAuth)
-                .category(requestDto.getCategory())
+                .postCategory(requestDto.getPostCategory())
                 .build();
 
         List<MultipartFile> images = requestDto.getImages();
@@ -66,6 +67,7 @@ public class PostService {
             List<PostImage> postImages = uploadAndCreatePostImages(images, post);
             post.getImages().addAll(postImages);
         }
+        post.setUpdatedAt(LocalDateTime.now());
 
         return postRepository.save(post);
     }
@@ -89,6 +91,7 @@ public class PostService {
             List<PostImage> postImages = uploadAndCreatePostImages(requestDto.getImages(), post);
             post.getImages().addAll(postImages);
         }
+        post.setUpdatedAt(LocalDateTime.now());
 
         if (requestDto.getContent()!= null && !requestDto.getContent().isBlank()) post.updateContent(requestDto.getContent());
 
@@ -114,7 +117,7 @@ public class PostService {
     private String createKeyName(String originalFilename) {
         String ext = "";
         if (originalFilename != null && originalFilename.contains(".")) {
-            ext = originalFilename.substring(originalFilename.lastIndexOf(".")); // 예: ".jpg"
+            ext = originalFilename.substring(originalFilename.lastIndexOf("."));
         }
         return "post/" + UUID.randomUUID() + ext;
     }

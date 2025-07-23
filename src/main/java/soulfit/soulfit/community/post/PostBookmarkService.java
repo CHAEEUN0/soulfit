@@ -18,7 +18,7 @@ public class PostBookmarkService {
     private final PostBookmarkRepository postBookmarkRepository;
 
     @Transactional
-    public void bookmarkOrUnbookmark(Long postId, @AuthenticationPrincipal UserAuth user){
+    public void bookmarkOrUnBookmark(Long postId, @AuthenticationPrincipal UserAuth user){
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글 없음"));
 
