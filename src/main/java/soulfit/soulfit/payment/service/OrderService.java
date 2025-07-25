@@ -4,36 +4,54 @@ package soulfit.soulfit.payment.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.payment.domain.Order;
+import soulfit.soulfit.meeting.domain.Meeting;
+import soulfit.soulfit.meeting.repository.MeetingRepository;
+import soulfit.soulfit.payment.domain.MeetingOrder;
+import soulfit.soulfit.payment.domain.SubscriptionOrder;
+import soulfit.soulfit.payment.domain.SubscriptionPlan;
 import soulfit.soulfit.payment.dto.CreateOrderRequest;
 import soulfit.soulfit.payment.dto.CreateOrderResponse;
-import soulfit.soulfit.payment.repository.OrderRepository;
+import soulfit.soulfit.payment.repository.MeetingOrderRepository;
+import soulfit.soulfit.payment.repository.SubscriptionOrderRepository;
+import soulfit.soulfit.payment.repository.SubscriptionPlanRepository;
 
 @Service
 @RequiredArgsConstructor
 public class OrderService {
 
-    private final OrderRepository orderRepository;
+    private final MeetingOrderRepository meetingOrderRepository;
+    private final SubscriptionOrderRepository subscriptionOrderRepository;
+    private final MeetingRepository meetingRepository; // Assuming this exists
+    private final SubscriptionPlanRepository subscriptionPlanRepository;
 
     public CreateOrderResponse createOrder(CreateOrderRequest request, UserAuth user) {
-        Order order = Order.builder()
-                .user(user)
-                .totalAmount(request.getTotalAmount())
-                .status(Order.OrderStatus.PENDING)
-                .build();
+        String orderId;
+        if ("MEETING".equals(request.getOrderType())) {
+            Meeting meeting = meetingRepository.findById(request.getItemId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid meeting ID"));
 
-        Order saved = orderRepository.save(order);
-        return new CreateOrderResponse(saved.getOrderId());
-    }
+            MeetingOrder meetingOrder = MeetingOrder.builder()
+                    .user(user)
+                    .meeting(meeting)
+                    .totalAmount(request.getTotalAmount())
+                    .status(MeetingOrder.OrderStatus.PENDING)
+                    .build();
+            orderId = meetingOrderRepository.save(meetingOrder).getOrderId();
 
-    public Order getValidOrder(String orderId, int requestedAmount) {
-        return orderRepository.findByOrderId(orderId)
-                .filter(order -> order.getTotalAmount() == requestedAmount)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid order or amount mismatch"));
-    }
+        } else if ("SUBSCRIPTION".equals(request.getOrderType())) {
+            SubscriptionPlan plan = subscriptionPlanRepository.findById(request.getItemId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid plan ID"));
 
-    public void markOrderAsPaid(Order order) {
-        order.markAsPaid(java.time.LocalDateTime.now());
-        orderRepository.save(order);
+            SubscriptionOrder subscriptionOrder = SubscriptionOrder.builder()
+                    .user(user)
+                    .plan(plan)
+                    .totalAmount(request.getTotalAmount())
+                    .status(SubscriptionOrder.OrderStatus.PENDING)
+                    .build();
+            orderId = subscriptionOrderRepository.save(subscriptionOrder).getOrderId();
+        } else {
+            throw new IllegalArgumentException("Invalid order type");
+        }
+        return new CreateOrderResponse(orderId);
     }
 }

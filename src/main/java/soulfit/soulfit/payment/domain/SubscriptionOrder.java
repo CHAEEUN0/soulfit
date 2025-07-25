@@ -8,24 +8,27 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "orders")
+@Table(name = "subscription_orders")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Builder
-public class Order {
+public class SubscriptionOrder {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 외부 노출용 주문 ID (UUID)
     @Column(nullable = false, unique = true)
     private String orderId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private UserAuth user;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "plan_id", nullable = false)
+    private SubscriptionPlan plan;
 
     @Column(nullable = false)
     private int totalAmount;
@@ -41,10 +44,12 @@ public class Order {
 
     @PrePersist
     public void prePersist() {
-        this.orderId = UUID.randomUUID().toString();
         this.createdAt = LocalDateTime.now();
         if (this.status == null) {
             this.status = OrderStatus.PENDING;
+        }
+        if (this.orderId == null) {
+            this.orderId = UUID.randomUUID().toString();
         }
     }
 

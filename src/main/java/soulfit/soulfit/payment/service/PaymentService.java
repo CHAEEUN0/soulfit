@@ -3,11 +3,14 @@ package soulfit.soulfit.payment.service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import soulfit.soulfit.payment.domain.Order;
+import soulfit.soulfit.payment.domain.MeetingOrder;
 import soulfit.soulfit.payment.domain.Payment;
+import soulfit.soulfit.payment.domain.SubscriptionOrder;
 import soulfit.soulfit.payment.dto.ApprovePaymentRequest;
 import soulfit.soulfit.payment.dto.PaymentResultResponse;
+import soulfit.soulfit.payment.repository.MeetingOrderRepository;
 import soulfit.soulfit.payment.repository.PaymentRepository;
+import soulfit.soulfit.payment.repository.SubscriptionOrderRepository;
 import soulfit.soulfit.payment.toss.TossApproveResponse;
 import soulfit.soulfit.payment.toss.TossPaymentsClient;
 
@@ -16,34 +19,45 @@ import soulfit.soulfit.payment.toss.TossPaymentsClient;
 public class PaymentService {
 
     private final PaymentRepository paymentRepository;
-    private final OrderService orderService;
+    private final MeetingOrderRepository meetingOrderRepository;
+    private final SubscriptionOrderRepository subscriptionOrderRepository;
     private final TossPaymentsClient tossClient;
 
     @Transactional
     public PaymentResultResponse approvePayment(ApprovePaymentRequest request) {
-        // 1. 주문 검증
-        Order order = orderService.getValidOrder(request.getOrderId(), request.getAmount());
-
-        // 2. Toss에 결제 승인 요청
         TossApproveResponse tossResponse = tossClient.approvePayment(
                 request.getPaymentKey(),
                 request.getOrderId(),
                 request.getAmount()
         );
 
-        // 3. Payment 엔티티 저장
+        MeetingOrder meetingOrder = meetingOrderRepository.findByOrderId(request.getOrderId()).orElse(null);
+        SubscriptionOrder subscriptionOrder = null;
+        if (meetingOrder == null) {
+            subscriptionOrder = subscriptionOrderRepository.findByOrderId(request.getOrderId())
+                .orElseThrow(() -> new IllegalArgumentException("Invalid order ID"));
+        }
+
+        if (meetingOrder != null) {
+            if (meetingOrder.getTotalAmount() != request.getAmount()) throw new IllegalArgumentException("Amount mismatch");
+            meetingOrder.markAsPaid(java.time.LocalDateTime.now());
+            meetingOrderRepository.save(meetingOrder);
+        } else {
+            if (subscriptionOrder.getTotalAmount() != request.getAmount()) throw new IllegalArgumentException("Amount mismatch");
+            subscriptionOrder.markAsPaid(java.time.LocalDateTime.now());
+            subscriptionOrderRepository.save(subscriptionOrder);
+        }
+
         Payment payment = Payment.builder()
                 .paymentKey(request.getPaymentKey())
-                .order(order)
+                .meetingOrder(meetingOrder)
+                .subscriptionOrder(subscriptionOrder)
                 .amount(request.getAmount())
                 .method(Payment.PaymentMethod.fromDescription(tossResponse.getMethod()))
                 .status(Payment.PaymentStatus.SUCCESS)
                 .approvedAt(tossResponse.getApprovedAt().toLocalDateTime())
                 .build();
         paymentRepository.save(payment);
-
-        // 4. 주문 상태 변경
-        orderService.markOrderAsPaid(order);
 
         return new PaymentResultResponse(Payment.PaymentStatus.SUCCESS, "결제가 완료되었습니다.");
     }

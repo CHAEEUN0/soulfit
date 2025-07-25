@@ -8,4 +8,6 @@ import lombok.Getter;
 public class CreateOrderRequest {
     private int totalAmount;
     private String orderName;
+    private String orderType; // "MEETING" 또는 "SUBSCRIPTION"
+    private Long itemId;      // meetingId 또는 subscriptionPlanId
 }
