@@ -88,10 +88,10 @@ public class SecurityConfig {
     }
 
 //     로컬 전용
-    @Bean
-    public WebSecurityCustomizer webSecurity(){
-        return web -> {
-            web.ignoring().requestMatchers(toH2Console());
-        };
-    }
+//    @Bean
+//    public WebSecurityCustomizer webSecurity(){
+//        return web -> {
+//            web.ignoring().requestMatchers(toH2Console());
+//        };
+//    }
 }
