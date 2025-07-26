@@ -50,6 +50,9 @@ dependencies {
 
 	implementation platform('software.amazon.awssdk:bom:2.25.15')
 	implementation 'software.amazon.awssdk:s3'
+
+	testImplementation "org.testcontainers:junit-jupiter:1.19.8"
+	testImplementation "org.testcontainers:localstack:1.19.8"
 }
 
 tasks.named('test') {
