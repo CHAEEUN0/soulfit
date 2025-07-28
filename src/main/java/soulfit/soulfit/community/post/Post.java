@@ -1,10 +1,7 @@
 package soulfit.soulfit.community.post;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -19,6 +16,8 @@ import java.util.List;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @EntityListeners(AuditingEntityListener.class)
+@AllArgsConstructor
+@Builder
 public class Post {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,19 +31,24 @@ public class Post {
     private String content;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<PostImage> images = new ArrayList<>();
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "poster_id")
     private UserAuth poster;
 
-    private int likeCount;
-    private int bookmarkCount;
+    @Builder.Default
+    private int likeCount = 0;
+    @Builder.Default
+    private int bookmarkCount = 0;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<PostLike> postLikes = new ArrayList<>();
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<PostBookmark> postBookmarks = new ArrayList<>();
 
     @CreatedDate
@@ -53,15 +57,6 @@ public class Post {
 
     private LocalDateTime updatedAt;
 
-    @Builder
-    public Post(Long id, String content, UserAuth poster, PostCategory postCategory) {
-        this.id = id;
-        this.content = content;
-        this.poster = poster;
-        this.postCategory = postCategory;
-        this.likeCount = 0;
-        this.bookmarkCount = 0;
-    }
 
     public void addLike(PostLike like) {
         this.postLikes.add(like);

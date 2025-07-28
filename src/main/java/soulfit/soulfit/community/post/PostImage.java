@@ -19,10 +19,14 @@ public class PostImage {
     private String imageUrl;
     private String imageKey;
 
+    @Column(name = "image_order")
+    private int order;
+
     @Builder
-    public PostImage(Post post, String imageUrl, String imageKey) {
+    public PostImage(Post post, String imageUrl, String imageKey, int order) {
         this.post = post;
         this.imageUrl = imageUrl;
         this.imageKey = imageKey;
+        this.order = order;
     }
 }

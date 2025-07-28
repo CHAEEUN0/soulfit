@@ -1,6 +1,5 @@
 package soulfit.soulfit.community.post;
 
-import aj.org.objectweb.asm.commons.Remapper;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.data.domain.Page;
@@ -9,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.common.S3Uploader;
 import soulfit.soulfit.community.post.dto.PostCreateRequestDto;
 import soulfit.soulfit.community.post.dto.PostUpdateRequestDto;
 
@@ -22,7 +22,7 @@ import java.util.UUID;
 public class PostService {
 
     private final PostRepository postRepository;
-    private final S3Uploader s3uploader;
+    private final PostImageService postImageService;
 
     @Transactional(readOnly = true)
     public Page<Post> findAllPosts(Pageable pageable) {
@@ -54,41 +54,36 @@ public class PostService {
 
 
     @Transactional
-    public Post createPost(PostCreateRequestDto requestDto, UserAuth userAuth){
+    public Post createPost(PostCreateRequestDto requestDto, UserAuth user){
         Post post = Post.builder().
                 content(requestDto.getContent())
-                .poster(userAuth)
+                .poster(user)
                 .postCategory(requestDto.getPostCategory())
                 .build();
 
-        List<MultipartFile> images = requestDto.getImages();
-
-        if (images != null && !images.isEmpty()) {
-            List<PostImage> postImages = uploadAndCreatePostImages(images, post);
+        if (requestDto.getImages() != null && !requestDto.getImages().isEmpty()) {
+            List<PostImage> postImages = postImageService.uploadImages(requestDto.getImages(), post);
             post.getImages().addAll(postImages);
         }
-        post.setUpdatedAt(LocalDateTime.now());
 
         return postRepository.save(post);
     }
 
     @Transactional
-    public Post updatePost(PostUpdateRequestDto requestDto, Long postId, UserAuth userAuth){
+    public Post updatePost(PostUpdateRequestDto requestDto, Long postId, UserAuth user){
 
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
 
-        if (!post.getPoster().getId().equals(userAuth.getId())){
+        if (!post.getPoster().getId().equals(user.getId())){
             throw new RuntimeException("수정 권한이 없습니다.");
         }
 
-        for (PostImage image : post.getImages()) {
-            s3uploader.delete(image.getImageKey());
-        }
+        postImageService.deleteImages(post.getImages());
         post.getImages().clear();
 
         if (requestDto.getImages() != null && !requestDto.getImages().isEmpty()) {
-            List<PostImage> postImages = uploadAndCreatePostImages(requestDto.getImages(), post);
+            List<PostImage> postImages = postImageService.uploadImages(requestDto.getImages(), post);
             post.getImages().addAll(postImages);
         }
         post.setUpdatedAt(LocalDateTime.now());
@@ -98,43 +93,59 @@ public class PostService {
         return post;
     }
 
-    private List<PostImage> uploadAndCreatePostImages(List<MultipartFile> images, Post post) {
-        List<PostImage> postImages = new ArrayList<>();
-        for (MultipartFile image : images) {
-            String key = createKeyName(image.getOriginalFilename());
-            String imageUrl = s3uploader.upload(image, key);
-
-            postImages.add(PostImage.builder()
-                    .post(post)
-                    .imageUrl(imageUrl)
-                    .imageKey(key)
-                    .build());
-
-        }
-        return postImages;
-    }
-
-    private String createKeyName(String originalFilename) {
-        String ext = "";
-        if (originalFilename != null && originalFilename.contains(".")) {
-            ext = originalFilename.substring(originalFilename.lastIndexOf("."));
-        }
-        return "post/" + UUID.randomUUID() + ext;
-    }
 
     @Transactional
-    public void deletePost(Long postId, UserAuth userAuth){
+    public void deletePost(Long postId, UserAuth user){
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
-        if (!post.getPoster().getId().equals(userAuth.getId())){
+        if (!post.getPoster().getId().equals(user.getId())){
             throw new RuntimeException("삭제 권한이 없습니다.");
         }
 
-        for (PostImage image : post.getImages()) {
-            s3uploader.delete(image.getImageUrl());
-        }
+        postImageService.deleteImages(post.getImages());
         postRepository.deleteById(postId);
     }
+
+    //모임리뷰 전용
+    @Transactional
+    public Post createReviewPost(String content, List<MultipartFile> images, UserAuth user) {
+        Post post = Post.builder().
+                content(content)
+                .poster(user)
+                .postCategory(PostCategory.MEETING_REVIEW)
+                .build();
+
+        if (images != null && !images.isEmpty()){
+            List<PostImage> postImages = postImageService.uploadImages(images, post);
+            post.getImages().addAll(postImages);
+        }
+        return postRepository.save(post);
+    }
+
+    @Transactional
+    public Post updateReviewPost(String content, List<MultipartFile> images, Long postId, UserAuth user){
+
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("게시글이 존재하지 않습니다."));
+
+        if (!post.getPoster().getId().equals(user.getId())){
+            throw new RuntimeException("수정 권한이 없습니다.");
+        }
+
+        postImageService.deleteImages(post.getImages());
+        post.getImages().clear();
+
+        if (images != null && !images.isEmpty()) {
+            List<PostImage> postImages = postImageService.uploadImages(images, post);
+            post.getImages().addAll(postImages);
+        }
+        post.setUpdatedAt(LocalDateTime.now());
+
+        if (content!= null && !content.isBlank()) post.updateContent(content);
+
+        return post;
+    }
+
 
 
 }

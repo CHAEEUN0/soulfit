@@ -4,13 +4,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
+import soulfit.soulfit.common.S3Uploader;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.InputStream;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
 public class S3UploaderTest {

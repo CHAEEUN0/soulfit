@@ -1,4 +1,4 @@
-package soulfit.soulfit.community.post;
+package soulfit.soulfit.common;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;

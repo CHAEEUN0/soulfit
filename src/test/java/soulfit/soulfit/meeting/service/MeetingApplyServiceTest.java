@@ -14,7 +14,7 @@ import soulfit.soulfit.meeting.dto.MeetingApplicantDto;
 import soulfit.soulfit.meeting.dto.MeetingQuestionDto;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
-import soulfit.soulfit.meeting.domain.Approvalstatus;
+import soulfit.soulfit.meeting.domain.ApprovalStatus;
 import soulfit.soulfit.meeting.domain.MeetingParticipant;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingQuestionRepository;
@@ -103,7 +103,7 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(user);
-        participant.setApproval_status(Approvalstatus.PENDING);
+        participant.setApproval_status(ApprovalStatus.PENDING);
 
         when(meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)).thenReturn(Optional.of(participant));
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
@@ -112,7 +112,7 @@ class MeetingApplyServiceTest {
         meetingApplyService.approveMeetingApplication(meetingId, userId);
 
         // then
-        assertThat(participant.getApproval_status()).isEqualTo(Approvalstatus.APPROVED);
+        assertThat(participant.getApproval_status()).isEqualTo(ApprovalStatus.APPROVED);
         assertThat(meeting.getCurrentParticipants()).isEqualTo(1);
         verify(meetingParticipantRepository).save(participant);
         verify(meetingRepository).save(meeting);
@@ -163,7 +163,7 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(user);
-        participant.setApproval_status(Approvalstatus.APPROVED);
+        participant.setApproval_status(ApprovalStatus.APPROVED);
 
         when(meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)).thenReturn(Optional.of(participant));
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
@@ -187,7 +187,7 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(user);
-        participant.setApproval_status(Approvalstatus.PENDING);
+        participant.setApproval_status(ApprovalStatus.PENDING);
 
         when(meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)).thenReturn(Optional.of(participant));
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
@@ -214,14 +214,14 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant1 = new MeetingParticipant();
         participant1.setMeeting(meeting);
         participant1.setUser(applicant1);
-        participant1.setApproval_status(Approvalstatus.PENDING);
+        participant1.setApproval_status(ApprovalStatus.PENDING);
 
         UserAuth applicant2 = new UserAuth("applicant2", "pass2", "app2@example.com");
         applicant2.setId(3L);
         MeetingParticipant participant2 = new MeetingParticipant();
         participant2.setMeeting(meeting);
         participant2.setUser(applicant2);
-        participant2.setApproval_status(Approvalstatus.APPROVED);
+        participant2.setApproval_status(ApprovalStatus.APPROVED);
 
         List<MeetingParticipant> participants = List.of(participant1, participant2);
 
@@ -295,7 +295,7 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(applicant);
-        participant.setApproval_status(Approvalstatus.PENDING);
+        participant.setApproval_status(ApprovalStatus.PENDING);
 
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
         when(meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)).thenReturn(Optional.of(participant));
@@ -304,7 +304,7 @@ class MeetingApplyServiceTest {
         meetingApplyService.rejectMeetingApplication(meetingId, userId, rejectionReason, hostUser);
 
         // then
-        assertThat(participant.getApproval_status()).isEqualTo(Approvalstatus.REJECTED);
+        assertThat(participant.getApproval_status()).isEqualTo(ApprovalStatus.REJECTED);
         assertThat(participant.getRejected_reason()).isEqualTo(rejectionReason);
         verify(meetingParticipantRepository).save(participant);
     }
@@ -393,7 +393,7 @@ class MeetingApplyServiceTest {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(applicant);
-        participant.setApproval_status(Approvalstatus.APPROVED);
+        participant.setApproval_status(ApprovalStatus.APPROVED);
 
         when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
         when(meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)).thenReturn(Optional.of(participant));
