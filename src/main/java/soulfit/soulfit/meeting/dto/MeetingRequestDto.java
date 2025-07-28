@@ -4,12 +4,13 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
+import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.meeting.domain.Location;
-import soulfit.soulfit.meeting.domain.Category;
-import soulfit.soulfit.meeting.domain.Meeting;
+import soulfit.soulfit.meeting.domain.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,12 +23,23 @@ public class MeetingRequest {
     private Category category;
 
     private Location location;
+
+    private Integer fee;
+    private String feeDescription;
+
+
     private LocalDateTime recruitDeadline;
     private LocalDateTime meetingTime;
 
     @Min(1)
     private Integer maxParticipants;
-    private Integer fee;
+
+
+
+    //준비물추가
+    private List<MultipartFile> images;
+    private List<MeetingSchedule> schedules;
+    private boolean canPickup;
 
 
     public Meeting toEntity() {
