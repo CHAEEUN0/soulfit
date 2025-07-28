@@ -94,13 +94,13 @@ public class DataInitializer implements CommandLineRunner {
                     .description("A meeting for fitness enthusiasts.")
                     .host(adminUser)
                     .category(Category.HOBBY)
-                    .location(new Location("city","road","zip",0.999,0.111))
+                    .location(new Location("city","district","address","detailAddress", "zip",0.999,0.111))
                     .fee(10000)
                     .meetingTime(LocalDateTime.now().plusDays(7))
                     .recruitDeadline(LocalDateTime.now().plusDays(3))
                     .maxParticipants(10)
                     .currentParticipants(0)
-                    .status(MeetingStatus.OPEN)
+                    .meetingStatus(MeetingStatus.OPEN)
                     .build();
             meetingRepository.save(sampleMeeting);
 
@@ -116,8 +116,8 @@ public class DataInitializer implements CommandLineRunner {
             MeetingParticipant participant = new MeetingParticipant();
             participant.setMeeting(sampleMeeting);
             participant.setUser(regularUser);
-            participant.setApproval_status(Approvalstatus.PENDING);
-            participant.setJoined_at(LocalDateTime.now());
+            participant.setApprovalStatus(ApprovalStatus.PENDING);
+            participant.setJoinedAt(LocalDateTime.now());
             meetingParticipantRepository.save(participant);
 
             System.out.println("Sample meeting and questions created.");
