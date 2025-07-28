@@ -7,6 +7,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
+import soulfit.soulfit.common.S3Uploader;
 import soulfit.soulfit.community.post.dto.PostCreateRequestDto;
 import soulfit.soulfit.community.post.dto.PostUpdateRequestDto;
 
