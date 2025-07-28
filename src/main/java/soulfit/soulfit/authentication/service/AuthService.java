@@ -25,10 +25,16 @@ import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.profile.domain.Gender;
 import soulfit.soulfit.profile.domain.UserProfile;
 import soulfit.soulfit.profile.repository.UserProfileRepository;
+import soulfit.soulfit.matching.profile.domain.MatchingProfile;
+import soulfit.soulfit.matching.profile.domain.Religion;
+import soulfit.soulfit.matching.profile.domain.DrinkingHabit;
+import soulfit.soulfit.matching.profile.domain.SmokingHabit;
+import soulfit.soulfit.matching.profile.domain.Visibility;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
+import java.util.HashSet;
 
 @Service
 public class AuthService {
@@ -98,8 +104,23 @@ public class AuthService {
                 LocalDate.parse(registerRequest.getBirthDate(), DateTimeFormatter.ISO_LOCAL_DATE),
                 Gender.valueOf(registerRequest.getGender().toUpperCase())
         );
-
         userAuth.setUserProfile(userProfile);
+
+
+        // 3. MatchingProfile 생성
+        MatchingProfile matchingProfile = MatchingProfile.builder()
+                .userAuth(userAuth)
+                .bio("")
+                .job("")
+                .heightCm(0)
+                .weightKg(0)
+                .religion(Religion.NONE)
+                .smoking(SmokingHabit.NON_SMOKER)
+                .drinking(DrinkingHabit.NEVER)
+                .visibility(Visibility.PRIVATE)
+                .idealTypes(new HashSet<>()) // 초기에는 이상형 키워드 없음
+                .build();
+        userAuth.setMatchingProfile(matchingProfile);
 
         userRepository.save(userAuth);
 

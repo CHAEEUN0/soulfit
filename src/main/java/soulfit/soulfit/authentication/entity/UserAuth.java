@@ -6,6 +6,7 @@ import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import soulfit.soulfit.matching.profile.domain.MatchingProfile;
 import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.profile.domain.UserProfile;
 
@@ -45,6 +46,10 @@ public class UserAuth implements UserDetails {
 
     @OneToOne(mappedBy = "userAuth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
+
+    @OneToOne(mappedBy = "userAuth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private MatchingProfile matchingProfile;
+
 
     public void addMeeting(Meeting meeting) {
         meetings.add(meeting);
