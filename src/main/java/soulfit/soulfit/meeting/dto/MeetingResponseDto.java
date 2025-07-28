@@ -1,50 +1,76 @@
 package soulfit.soulfit.meeting.dto;
 
-import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
-import soulfit.soulfit.authentication.dto.UserResponseDto;
-import soulfit.soulfit.meeting.domain.Location;
-import soulfit.soulfit.meeting.domain.Category;
-import soulfit.soulfit.meeting.domain.Meeting;
+import soulfit.soulfit.meeting.domain.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Builder
 @Data
-public class MeetingResponse {
+public class MeetingResponseDto {
 
-    @NotNull
+    private Long id;
     private String title;
-
-    @NotNull
     private String description;
-
-    @NotNull
     private Category category;
-
-    @NotNull
-    private UserResponseDto host;
-
     private Location location;
 
-    private LocalDateTime recruitDeadline;
-
     private int fee;
-    private int max_participants;
+    private String feeDescription;
+
+    private List<String> supplies;
+    private List<String> schedules;
+    private List<String> imageUrls;
+    private List<String> keywords;
+
+
+    private boolean canPickup;
+
+    private LocalDateTime meetingTime;
+    private Integer duration;
+
+    private LocalDateTime recruitDeadline;
+    private int maxParticipants;
+
+    private MeetingStatus status;
+
+    private int currentParticipants;
+
+    private LocalDateTime createdAt;
+
+    //호스트 정보, 리뷰 평균평점, 리뷰 추가
 
 
 
-    public static MeetingResponse from(Meeting meeting) {
-        return MeetingResponse.builder()
+    public static MeetingResponseDto from(Meeting meeting) {
+        return MeetingResponseDto.builder()
+                .id(meeting.getId())
                 .title(meeting.getTitle())
                 .description(meeting.getDescription())
                 .category(meeting.getCategory())
-                .host(UserResponseDto.from(meeting.getHost()))
                 .location(meeting.getLocation())
-                .recruitDeadline(meeting.getRecruitDeadline())
                 .fee(meeting.getFee())
-                .max_participants(meeting.getMaxParticipants())
+                .feeDescription(meeting.getFeeDescription())
+                .supplies(meeting.getSupplies())
+                .schedules(meeting.getSchedules())
+                .imageUrls(meeting.getImages()
+                                .stream()
+                                .map(MeetingImage::getImageUrl)
+                                .toList())
+                .keywords(meeting.getKeywords()
+                                .stream()
+                                .map(Keyword::getName)
+                                .toList())
+                .canPickup(meeting.isCanPickup())
+                .meetingTime(meeting.getMeetingTime())
+                .duration(meeting.getDuration())
+                .recruitDeadline(meeting.getRecruitDeadline())
+                .maxParticipants(meeting.getMaxParticipants())
+                .status(meeting.getMeetingStatus())
+                .currentParticipants(meeting.getCurrentParticipants())
+                .createdAt(meeting.getCreatedAt())
                 .build();
     }
 }

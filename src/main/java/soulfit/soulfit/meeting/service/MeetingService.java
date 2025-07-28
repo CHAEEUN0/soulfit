@@ -1,23 +1,26 @@
 package soulfit.soulfit.meeting.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
+import soulfit.soulfit.meeting.domain.Keyword;
 import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.dto.MeetingFilter;
-import soulfit.soulfit.meeting.dto.MeetingRequest;
-import soulfit.soulfit.meeting.dto.MeetingResponse;
+import soulfit.soulfit.meeting.domain.MeetingImage;
+import soulfit.soulfit.meeting.dto.MeetingRequestDto;
+import soulfit.soulfit.meeting.dto.MeetingResponseDto;
+import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
+import soulfit.soulfit.meeting.repository.MeetingKeywordRepository;
+import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
+import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,12 +29,12 @@ public class MeetingService {
 
     private final MeetingRepository meetingRepository;
     private final UserRepository userRepository;
+    private final MeetingImageService meetingImageService;
+    private final MeetingKeywordRepository meetingKeyWordRepository;
+    private final MeetingParticipantRepository meetingParticipantRepository;
 
-    public List<MeetingResponse> getAllMeetings(){
-        return meetingRepository.findAll().stream()
-                .map(MeetingResponse::from)
-                .collect(Collectors.toList());
-
+    public Page<Meeting> getAllMeetings(Pageable pageable){
+        return meetingRepository.findAll(pageable);
     }
 
     public Meeting getMeetingById(Long id) {
@@ -40,31 +43,69 @@ public class MeetingService {
     }
 
     @Transactional
-    public Meeting createMeeting(UserAuth userAuth, MeetingRequest request) {
+    public Meeting createMeeting(MeetingRequestDto requestDto, UserAuth userAuth) {
         // 1. 준영속 userAuth의 id를 이용해 영속 상태의 user를 다시 조회한다.
         UserAuth managedUser = userRepository.findById(userAuth.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userAuth.getId()));
 
-        validMeetingRequest(request);
+        if (requestDto.getMeetingTime().isBefore(LocalDateTime.now())){
+            throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
+        }
+
+        if (requestDto.getRecruitDeadline().isAfter(requestDto.getMeetingTime())){
+            throw new IllegalArgumentException("마감시간은 모임시간보다 느릴 수 없습니다.");
+        }
 
         // 2. 영속 상태의 managedUser를 사용해 연관관계를 설정한다.
-        Meeting meeting = Meeting.createMeeting(request, managedUser);
-        meetingRepository.save(meeting);
+        Meeting meeting = Meeting.createMeeting(requestDto, managedUser);
 
-        return meeting;
+        if (requestDto.getImages() != null && !requestDto.getImages().isEmpty()) {
+            List<MeetingImage> meetingImages = meetingImageService.uploadImages(requestDto.getImages(), meeting);
+            meeting.getImages().addAll(meetingImages);
+        }
+
+        List<Keyword> keywords = meetingKeyWordRepository.findAllById(requestDto.getKeywordIds());
+        meeting.setKeywords(new HashSet<>(keywords));
+
+
+        return meetingRepository.save(meeting);
+
     }
 
     @Transactional
-    public Meeting updateMeeting(Long meetingId, MeetingRequest request, UserAuth user) {
+    public Meeting updateMeeting(Long meetingId, MeetingUpdateRequestDto requestDto, UserAuth user) {
         Meeting meeting = getMeetingOrThrow(meetingId);
 
         if (!meeting.getHost().getId().equals(user.getId())) {
             throw new AccessDeniedException("수정 권한 없음");
         }
 
-        validMeetingRequest(request);
+        if (requestDto.getMeetingTime().isBefore(LocalDateTime.now())){
+            throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
+        }
 
-        meeting.update(request);
+        if (requestDto.getRecruitDeadline().isAfter(requestDto.getMeetingTime())){
+            throw new IllegalArgumentException("마감시간은 모임시간보다 느릴 수 없습니다.");
+        }
+
+        meeting.update(requestDto);
+
+        meetingImageService.deleteImages(meeting.getImages());
+        meeting.getImages().clear();
+
+        if (requestDto.getImages() != null && !requestDto.getImages().isEmpty()) {
+            List<MeetingImage> reviewImages = meetingImageService.uploadImages(requestDto.getImages(), meeting);
+            meeting.getImages().addAll(reviewImages);
+        }
+
+        List<Long> keywordIds = requestDto.getKeywordIds();
+        if (keywordIds != null && !keywordIds.isEmpty()) {
+            List<Keyword> keywords = meetingKeyWordRepository.findAllById(keywordIds);
+            meeting.setKeywords(new HashSet<>(keywords));
+        }
+
+        meeting.setUpdatedAt(LocalDateTime.now());
+
         return meeting;
     }
 
@@ -75,56 +116,34 @@ public class MeetingService {
         if (!meeting.getHost().getId().equals(user.getId())) {
             throw new AccessDeniedException("삭제 권한 없음");
         }
-
+        meetingImageService.deleteImages(meeting.getImages());
         meetingRepository.delete(meeting);
     }
 
-    public List<MeetingResponse> searchMeetingsByTitle(String keyword) {
+    public List<MeetingResponseDto> searchMeetingsByTitle(String keyword) {
         if (keyword == null || keyword.trim().isEmpty()) {
             throw new IllegalArgumentException("검색어를 입력해주세요.");
         }
 
         List<Meeting> meetings = meetingRepository.findByTitleContainingIgnoreCase(keyword);
         return meetings.stream()
-                .map(MeetingResponse::from)
+                .map(MeetingResponseDto::from)
                 .toList();
     }
 
-    public List<MeetingResponse> filterMeetings(MeetingFilter filter) {
 
-        if (filter.getStartDate() != null && filter.getEndDate() != null) {
-            if (filter.getStartDate().isAfter(filter.getEndDate())) {
-                throw new IllegalArgumentException("시작 날짜는 종료 날짜 이전이어야 합니다.");
-            }
-        }
-        LocalDateTime start = filter.getStartDate() != null ? filter.getStartDate().atStartOfDay() : LocalDate.MIN.atStartOfDay();
-
-        LocalDateTime end = filter.getEndDate() != null ? filter.getEndDate().atTime(LocalTime.MAX) : LocalDate.MAX.atTime(LocalTime.MAX);
-
-        List<Meeting> meetings = meetingRepository.filterMeetings(
-                filter.getCategory(),
-                filter.getCity(),
-                start,
-                end
-        );
-
-        return meetings.stream()
-                .map(MeetingResponse::from)
-                .toList();
-    }
 
     private Meeting getMeetingOrThrow(Long id) {
         return meetingRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("모임을 찾을 수 없음"));
     }
 
-    private void validMeetingRequest(MeetingRequest request) {
-        if (request.getMeetingTime().isBefore(LocalDateTime.now())){
-            throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
-        }
 
-        if (request.getRecruitDeadline().isAfter(request.getMeetingTime())){
-            throw new IllegalArgumentException("마감시간은 모임시간보다 느릴 수 없습니다.");
-        }
+    @Transactional(readOnly = true)
+    public Page<Meeting> getParticipatedMeetings(UserAuth user, Pageable pageable) {
+        Pageable sortedPageable  = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "meetingTime"));
+        return meetingParticipantRepository.findMeetingUserParticipated(user, sortedPageable);
     }
+
+
 }

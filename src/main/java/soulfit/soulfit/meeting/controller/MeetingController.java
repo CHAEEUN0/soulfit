@@ -2,86 +2,107 @@ package soulfit.soulfit.meeting.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.dto.MeetingFilter;
-import soulfit.soulfit.meeting.dto.MeetingRequest;
-import soulfit.soulfit.meeting.dto.MeetingResponse;
-import soulfit.soulfit.meeting.response.CommonResponse;
+import soulfit.soulfit.meeting.dto.MeetingRequestDto;
+import soulfit.soulfit.meeting.dto.MeetingResponseDto;
+import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
+import soulfit.soulfit.meeting.service.MeetingBookmarkService;
 import soulfit.soulfit.meeting.service.MeetingService;
 
 import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/meetings")
+@RequestMapping("/api")
 public class MeetingController {
 
     private final MeetingService meetingService;
+    private final MeetingBookmarkService meetingBookmarkService;
 
 
-    @GetMapping
-    public ResponseEntity<CommonResponse<List<MeetingResponse>>> getAllMeetings(){
-        List<MeetingResponse> list = meetingService.getAllMeetings();
+    /**
+     *
+     * @param pageable
+     * 인기순 /api/meetings?sort=bookmarkCount,desc
+     * 최신순 /api/meetings?sort=createAt,desc
+     */
+    @GetMapping("meetings")
+    public ResponseEntity<Page<MeetingResponseDto>> getMeetings(Pageable pageable){
+        Page<MeetingResponseDto> result = meetingService.getAllMeetings(pageable).map(MeetingResponseDto::from);
+        return ResponseEntity.ok(result);
+    }
 
-        return ResponseEntity.ok(new CommonResponse<>(list));
+
+
+    //최근 참여모임
+    @GetMapping("me/meetings/participated")
+    public ResponseEntity<Page<MeetingResponseDto>> getParticipatedMeetings(@AuthenticationPrincipal UserAuth user, Pageable pageable){
+        Page<MeetingResponseDto> result = meetingService.getParticipatedMeetings(user, pageable).map(MeetingResponseDto::from);
+
+        return ResponseEntity.ok(result);
+
+    }
+
+    //유저가 저장한(북마크) 모임
+    @GetMapping("me/meetings/bookmarked")
+    public ResponseEntity<Page<MeetingResponseDto>> getUserBookmarkedMeetings(@AuthenticationPrincipal UserAuth user, Pageable pageable){
+        Page<MeetingResponseDto> result = meetingBookmarkService.getBookmarkedMeetingsByUser(user, pageable)
+                .map(MeetingResponseDto::from);
+
+        return ResponseEntity.ok(result);
     }
 
     //모임 이름으로 검색
-    @GetMapping("/search")
-    public ResponseEntity<CommonResponse<List<MeetingResponse>>> searchMeetings(
-            @RequestParam String keyword) {
-
-        List<MeetingResponse> result = meetingService.searchMeetingsByTitle(keyword);
-        return ResponseEntity.ok(new CommonResponse<>(result));
-    }
-
-    @GetMapping("/filter")
-    public ResponseEntity<CommonResponse<List<MeetingResponse>>> filterMeeting(@ModelAttribute MeetingFilter filter){
-        List<MeetingResponse> result = meetingService.filterMeetings(filter);
-        return ResponseEntity.ok(new CommonResponse<>(result));
+    @GetMapping("meetings/search")
+    public ResponseEntity<List<MeetingResponseDto>> searchMeetings(@RequestParam String keyword) {
+        List<MeetingResponseDto> result = meetingService.searchMeetingsByTitle(keyword);
+        return ResponseEntity.ok(result);
     }
 
 
-    @GetMapping("/{id}")
-    public ResponseEntity<MeetingResponse> getMeeting(@PathVariable Long id) {
-        Meeting meeting = meetingService.getMeetingById(id);
-        return ResponseEntity.ok(MeetingResponse.from(meeting));
+    @GetMapping("meetings/{meetingId}")
+    public ResponseEntity<MeetingResponseDto> getMeeting(@PathVariable Long meetingId) {
+        Meeting meeting = meetingService.getMeetingById(meetingId);
+        return ResponseEntity.ok(MeetingResponseDto.from(meeting));
     }
 
 
+    @PostMapping("meetings")
+    public ResponseEntity<MeetingResponseDto> createMeeting(@ModelAttribute @Valid MeetingRequestDto request, @AuthenticationPrincipal UserAuth userAuth) {
 
-    //모임 생성
-    @PostMapping
-    public ResponseEntity<MeetingResponse> createMeeting(
-            @RequestBody @Valid MeetingRequest request,
-            @AuthenticationPrincipal UserAuth userAuth) {
+        Meeting meeting = meetingService.createMeeting(request, userAuth);
 
-        Meeting meeting = meetingService.createMeeting(userAuth, request);
-
-        return ResponseEntity.ok(MeetingResponse.from(meeting));
+        return ResponseEntity.ok(MeetingResponseDto.from(meeting));
     }
 
 
-    @PutMapping("/{id}")
-    public ResponseEntity<MeetingResponse> updateMeeting(@PathVariable Long id,
-                                              @RequestBody @Valid MeetingRequest request,
-                                              @AuthenticationPrincipal UserAuth userAuth) {
+    @PatchMapping("meetings/{meetingId}")
+    public ResponseEntity<MeetingResponseDto> updateMeeting(@PathVariable Long meetingId, @ModelAttribute @Valid MeetingUpdateRequestDto request, @AuthenticationPrincipal UserAuth userAuth) {
 
-        Meeting updatedMeeting = meetingService.updateMeeting(id, request, userAuth);
-        return ResponseEntity.ok(MeetingResponse.from(updatedMeeting));
+        Meeting updatedMeeting = meetingService.updateMeeting(meetingId, request, userAuth);
+        return ResponseEntity.ok(MeetingResponseDto.from(updatedMeeting));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("meetings/{meetingId}")
     public ResponseEntity<Void> deleteMeeting(
-            @PathVariable Long id,
+            @PathVariable Long meetingId,
             @AuthenticationPrincipal UserAuth userAuth) {
 
-        meetingService.deleteMeeting(id, userAuth);
+        meetingService.deleteMeeting(meetingId, userAuth);
+        return ResponseEntity.noContent().build();
+    }
+
+
+    @PostMapping("meetings/{meetingId}/bookmarks")
+    public ResponseEntity<Void> toggleBookMark(@PathVariable Long meetingId,
+                                               @AuthenticationPrincipal UserAuth user) {
+        meetingBookmarkService.bookmarkOrUnBookmark(meetingId, user);
         return ResponseEntity.noContent().build();
     }
 

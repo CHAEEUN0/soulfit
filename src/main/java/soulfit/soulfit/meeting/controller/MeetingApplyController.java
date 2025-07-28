@@ -90,9 +90,9 @@ public class MeetingApplyController {
     }
 
     @GetMapping("/my-created")
-    public ResponseEntity<CommonResponse<List<MeetingResponse>>> getMyCreatedMeetings(
+    public ResponseEntity<CommonResponse<List<MeetingResponseDto>>> getMyCreatedMeetings(
             @AuthenticationPrincipal UserAuth userAuth) {
-        List<MeetingResponse> list = meetingApplyService.getMeetingsByHost(userAuth);
+        List<MeetingResponseDto> list = meetingApplyService.getMeetingsByHost(userAuth);
         return ResponseEntity.ok(new CommonResponse<>(list));
     }
 
