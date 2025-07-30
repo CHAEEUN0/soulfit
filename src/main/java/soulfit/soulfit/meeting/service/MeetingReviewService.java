@@ -17,6 +17,8 @@ import soulfit.soulfit.meeting.dto.MeetingReviewRequestDto;
 import soulfit.soulfit.meeting.dto.MeetingReviewUpdateRequestDto;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 import soulfit.soulfit.meeting.repository.MeetingReviewRepository;
+import soulfit.soulfit.meeting.domain.HostProFile;
+import soulfit.soulfit.meeting.repository.HostProfileRepository;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,6 +31,7 @@ public class MeetingReviewService {
     private final MeetingRepository meetingRepository;
     private final MeetingReviewRepository meetingReviewRepository;
     private final PostService postService;
+    private final HostProfileRepository hostProfileRepository;
 
 
     @Transactional(readOnly = true)
@@ -40,7 +43,7 @@ public class MeetingReviewService {
     @Transactional(readOnly = true)
     public Page<MeetingReview> getUserReviews(UserAuth user, Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
-        return meetingReviewRepository.findByMeetingId(user.getId(), sortedPageable);
+        return meetingReviewRepository.findByUser(user, sortedPageable);
     }
 
 
@@ -59,7 +62,10 @@ public class MeetingReviewService {
         meetingReview.setPostImageUrls(imageUrls);
         meetingReview.setPostId(post.getId());
 
-        return meetingReviewRepository.save(meetingReview);
+        MeetingReview saved = meetingReviewRepository.save(meetingReview);
+        updateHostAverageRating(meeting.getHost().getId());
+
+        return saved;
     }
 
 
@@ -77,12 +83,10 @@ public class MeetingReviewService {
         meetingReview.updateReview(requestDto.getMeetingRating(), requestDto.getHostRating(), requestDto.getContent());
         meetingReview.setUpdatedAt(LocalDateTime.now());
 
+        Post post = postService.updateReviewPost(requestDto.getContent(), requestDto.getImages(), meetingReview.getPostId(), user);
+        meetingReview.setPostImageUrls(post.getImages().stream().map(PostImage::getImageUrl).toList());
 
-        Long postId = meetingReview.getPostId();
-        Post post = postService.updateReviewPost(requestDto.getContent(), requestDto.getImages(), postId, user);
-
-        List<String> imageUrls = post.getImages().stream().map(PostImage::getImageUrl).toList();
-        meetingReview.setPostImageUrls(imageUrls);
+        updateHostAverageRating(meetingReview.getMeeting().getHost().getId());
 
         return meetingReview;
     }
@@ -97,9 +101,15 @@ public class MeetingReviewService {
         }
 
         postService.deletePost(meetingReview.getPostId(), user);
-
         meetingReviewRepository.delete(meetingReview);
-
+        updateHostAverageRating(meetingReview.getMeeting().getHost().getId());
+    }
+    
+    private void updateHostAverageRating(Long hostId){
+        HostProFile hostProFile = hostProfileRepository.findById(hostId)
+                .orElseThrow(() -> new RuntimeException("호스트 프로필이 존재하지 않습니다."));
+        Double hostAvgRating = meetingReviewRepository.findAverageHostRatingByHostId(hostId);
+        hostProFile.setHostAverageRating(hostAvgRating!= null ?  Math.round(hostAvgRating * 10.0) / 10.0 : 0.0);
 
     }
 }

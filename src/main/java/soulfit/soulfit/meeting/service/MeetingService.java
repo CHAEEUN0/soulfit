@@ -17,6 +17,8 @@ import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
 import soulfit.soulfit.meeting.repository.MeetingKeywordRepository;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
+import soulfit.soulfit.meeting.domain.HostProFile;
+import soulfit.soulfit.meeting.repository.HostProfileRepository;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -32,6 +34,7 @@ public class MeetingService {
     private final MeetingImageService meetingImageService;
     private final MeetingKeywordRepository meetingKeyWordRepository;
     private final MeetingParticipantRepository meetingParticipantRepository;
+    private final HostProfileRepository hostProfileRepository;
 
     public Page<Meeting> getAllMeetings(Pageable pageable){
         return meetingRepository.findAll(pageable);
@@ -47,6 +50,12 @@ public class MeetingService {
         // 1. 준영속 userAuth의 id를 이용해 영속 상태의 user를 다시 조회한다.
         UserAuth managedUser = userRepository.findById(userAuth.getId())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found with id: " + userAuth.getId()));
+
+        hostProfileRepository.findById(managedUser.getId())
+                .orElseGet(() -> {
+                    HostProFile hostProFile = new HostProFile(managedUser, 0.0);
+                    return hostProfileRepository.save(hostProFile);
+                });
 
         if (requestDto.getMeetingTime().isBefore(LocalDateTime.now())){
             throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
