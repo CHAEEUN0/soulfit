@@ -1,7 +1,6 @@
 package soulfit.soulfit.meeting.domain;
 
 import jakarta.persistence.*;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -19,26 +18,27 @@ public class MeetingParticipant {
     @Id @GeneratedValue
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "meeting_id")
     private Meeting meeting;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserAuth user;
 
-    private Approvalstatus approval_status;
+    @Enumerated(EnumType.STRING)
+    private ApprovalStatus approvalStatus;
 
-    private LocalDateTime joined_at;
-    private LocalDateTime approved_at;
-    private String rejected_reason;
+    private LocalDateTime joinedAt;
+    private LocalDateTime approvedAt;
+    private String rejectedReason;
     private boolean reviewed;
 
     public void approve() {
-        if (this.approval_status != Approvalstatus.PENDING) {
+        if (this.approvalStatus != ApprovalStatus.PENDING) {
             throw new IllegalStateException("Participant status is not PENDING. Cannot approve.");
         }
-        this.approval_status = Approvalstatus.APPROVED;
-        this.approved_at = LocalDateTime.now();
+        this.approvalStatus = ApprovalStatus.APPROVED;
+        this.approvedAt = LocalDateTime.now();
     }
 }

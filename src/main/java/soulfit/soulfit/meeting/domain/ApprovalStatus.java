@@ -1,5 +1,5 @@
 package soulfit.soulfit.meeting.domain;
 
-public enum Approvalstatus {
+public enum ApprovalStatus {
     PENDING,APPROVED,REJECTED;
 }

@@ -10,7 +10,7 @@ import soulfit.soulfit.meeting.domain.*;
 import soulfit.soulfit.meeting.dto.MeetingAnswerDto;
 import soulfit.soulfit.meeting.dto.MeetingApplicantDto;
 import soulfit.soulfit.meeting.dto.MeetingQuestionDto;
-import soulfit.soulfit.meeting.dto.MeetingResponse;
+import soulfit.soulfit.meeting.dto.MeetingResponseDto;
 import soulfit.soulfit.meeting.repository.*;
 import soulfit.soulfit.notification.domain.NotificationType;
 import soulfit.soulfit.notification.service.NotificationService;
@@ -125,8 +125,8 @@ public class MeetingApplyService {
         MeetingParticipant participant = new MeetingParticipant();
         participant.setMeeting(meeting);
         participant.setUser(user);
-        participant.setApproval_status(Approvalstatus.PENDING); // Or APPROVED, depending on business logic
-        participant.setJoined_at(LocalDateTime.now());
+        participant.setApprovalStatus(ApprovalStatus.PENDING); // Or APPROVED, depending on business logic
+        participant.setJoinedAt(LocalDateTime.now());
 
         meetingParticipantRepository.save(participant);
 
@@ -185,18 +185,18 @@ public class MeetingApplyService {
         MeetingParticipant participant = meetingParticipantRepository.findByMeetingIdAndUserId(meetingId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Participant not found for meeting: " + meetingId + " and user: " + userId));
 
-        if (participant.getApproval_status() == Approvalstatus.APPROVED) {
+        if (participant.getApprovalStatus() == ApprovalStatus.APPROVED) {
             throw new IllegalStateException("이미 승인된 참가자는 거절할 수 없습니다.");
         }
 
-        participant.setApproval_status(Approvalstatus.REJECTED);
-        participant.setRejected_reason(rejectionReason);
+        participant.setApprovalStatus(ApprovalStatus.REJECTED);
+        participant.setRejectedReason(rejectionReason);
         meetingParticipantRepository.save(participant);
     }
 
-    public List<MeetingResponse> getMeetingsByHost(UserAuth userAuth) {
+    public List<MeetingResponseDto> getMeetingsByHost(UserAuth userAuth) {
         return meetingRepository.findByHost(userAuth).stream()
-                .map(MeetingResponse::from)
+                .map(MeetingResponseDto::from)
                 .collect(Collectors.toList());
     }
 
