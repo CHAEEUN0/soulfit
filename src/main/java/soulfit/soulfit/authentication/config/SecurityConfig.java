@@ -87,7 +87,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // 로컬 전용
+//     로컬 전용
 //    @Bean
 //    public WebSecurityCustomizer webSecurity(){
 //        return web -> {
