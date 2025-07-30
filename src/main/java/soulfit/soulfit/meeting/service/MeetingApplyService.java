@@ -133,7 +133,8 @@ public class MeetingApplyService {
         Long hostId = meeting.getHost().getId();
 
         notificationService.sendNotification(
-                hostId,
+                user,
+                meeting.getHost(),
                 NotificationType.JOIN_MEETING,
                 "user joined!",
                 "user" + user.getUsername() + " has joined your meeting[" + meeting.getTitle()+"]",
@@ -157,6 +158,15 @@ public class MeetingApplyService {
 
         meetingParticipantRepository.save(participant);
         meetingRepository.save(meeting);
+
+        notificationService.sendNotification(
+                meeting.getHost(),
+                participant.getUser(),
+                NotificationType.APPROVED,
+                "Meeting Approved",
+                "Your application for meeting [" + meeting.getTitle() + "] has been approved.",
+                meeting.getId()
+        );
     }
 
     @Transactional(readOnly = true)

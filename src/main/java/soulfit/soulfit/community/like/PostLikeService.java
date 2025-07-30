@@ -8,6 +8,9 @@ import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.community.post.Post;
 import soulfit.soulfit.community.post.PostRepository;
 
+import soulfit.soulfit.notification.domain.NotificationType;
+import soulfit.soulfit.notification.service.NotificationService;
+
 import java.util.Optional;
 
 @Service
@@ -16,6 +19,7 @@ public class PostLikeService {
 
     private final PostRepository postRepository;
     private final PostLikeRepository postLikeRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public void likeOrUnlikePost(Long postId, @AuthenticationPrincipal UserAuth user){
@@ -32,6 +36,14 @@ public class PostLikeService {
             post.addLike(like);
             postLikeRepository.save(like);
 
+            notificationService.sendNotification(
+                    user,
+                    post.getPoster(),
+                    NotificationType.LIKE_POST,
+                    "Post Liked",
+                    user.getUsername() + " liked your post.",
+                    post.getId()
+            );
         }
 
     }
