@@ -11,7 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
-import soulfit.soulfit.community.post.S3Uploader;
+import soulfit.soulfit.common.S3Uploader;
 import soulfit.soulfit.profile.domain.*;
 import soulfit.soulfit.profile.dto.PhotoResponse;
 import soulfit.soulfit.profile.dto.UpdateUserProfileRequest;
