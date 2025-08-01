@@ -8,7 +8,7 @@ import java.util.List;
 import soulfit.soulfit.authentication.entity.UserAuth;
 
 @Repository
-public interface MeetingRepository extends JpaRepository<Meeting, Long> {
+public interface MeetingRepository extends JpaRepository<Meeting, Long>, MeetingQueryRepository {
 
     List<Meeting> findByTitleContainingIgnoreCase(String keyword);
 

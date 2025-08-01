@@ -14,6 +14,7 @@ import soulfit.soulfit.meeting.domain.MeetingImage;
 import soulfit.soulfit.meeting.dto.MeetingRequestDto;
 import soulfit.soulfit.meeting.dto.MeetingResponseDto;
 import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
+import soulfit.soulfit.meeting.dto.SearchFilter;
 import soulfit.soulfit.meeting.repository.MeetingKeywordRepository;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
@@ -89,11 +90,12 @@ public class MeetingService {
             throw new AccessDeniedException("수정 권한 없음");
         }
 
-        if (requestDto.getMeetingTime().isBefore(LocalDateTime.now())){
+        if (requestDto.getMeetingTime() != null && requestDto.getMeetingTime().isBefore(LocalDateTime.now())) {
             throw new IllegalArgumentException("모임시간은 현재시간 이후여야 합니다.");
         }
 
-        if (requestDto.getRecruitDeadline().isAfter(requestDto.getMeetingTime())){
+        if (requestDto.getRecruitDeadline() != null && requestDto.getMeetingTime() != null &&
+                requestDto.getRecruitDeadline().isAfter(requestDto.getMeetingTime())) {
             throw new IllegalArgumentException("마감시간은 모임시간보다 느릴 수 없습니다.");
         }
 
@@ -138,6 +140,10 @@ public class MeetingService {
         return meetings.stream()
                 .map(MeetingResponseDto::from)
                 .toList();
+    }
+
+    public Page<Meeting> filterMeetings(SearchFilter filter, Pageable pageable) {
+        return meetingRepository.search(filter, pageable);
     }
 
 

@@ -2,10 +2,12 @@ package soulfit.soulfit.meeting.domain;
 
 import jakarta.persistence.Embeddable;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
 @Embeddable
+@Getter
 @NoArgsConstructor
 public class Location {
     private String city; // 시도(sido)

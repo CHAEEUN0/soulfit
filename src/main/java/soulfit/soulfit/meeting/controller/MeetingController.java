@@ -12,6 +12,7 @@ import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.dto.MeetingRequestDto;
 import soulfit.soulfit.meeting.dto.MeetingResponseDto;
 import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
+import soulfit.soulfit.meeting.dto.SearchFilter;
 import soulfit.soulfit.meeting.service.MeetingBookmarkService;
 import soulfit.soulfit.meeting.service.MeetingService;
 
@@ -65,6 +66,13 @@ public class MeetingController {
         return ResponseEntity.ok(result);
     }
 
+    //조건 검색
+    @GetMapping("/meetings/filter")
+    public ResponseEntity<Page<MeetingResponseDto>> filterMeetings(SearchFilter filter, Pageable pageable
+    ) {
+        Page<Meeting> meetings = meetingService.filterMeetings(filter, pageable);
+        return ResponseEntity.ok(meetings.map(MeetingResponseDto::from));
+    }
 
     @GetMapping("meetings/{meetingId}")
     public ResponseEntity<MeetingResponseDto> getMeeting(@PathVariable Long meetingId) {
