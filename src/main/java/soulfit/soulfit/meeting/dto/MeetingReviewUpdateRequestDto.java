@@ -1,19 +1,22 @@
 package soulfit.soulfit.meeting.dto;
 
 
-import lombok.Getter;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 
 
 import java.util.List;
 
-@Getter
+@Data
+@NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class MeetingReviewUpdateRequestDto {
 
 
-    private int meetingRating;
+    private Double meetingRating;
 
-    private int hostRating;
+    private Double hostRating;
 
     private String content;
 

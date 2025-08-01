@@ -10,9 +10,9 @@ import java.util.List;
 @Getter
 public class MeetingReviewResponseDto {
 
-    private int meetingRating;
+    private double meetingRating;
 
-    private int hostRating;
+    private double hostRating;
 
     private String content;
 

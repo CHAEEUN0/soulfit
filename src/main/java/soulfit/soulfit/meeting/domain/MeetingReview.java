@@ -37,10 +37,10 @@ public class MeetingReview {
 
 
     @Column(nullable = false)
-    private int meetingRating;
+    private double meetingRating;
 
     @Column(nullable = false)
-    private int hostRating;
+    private double hostRating;
 
     private String content;
 
@@ -73,7 +73,7 @@ public class MeetingReview {
         this.postImageUrls = postImageUrls;
     }
 
-    public void updateReview(Integer meetingRating, Integer hostRating, String content) {
+    public void updateReview(Double meetingRating, Double hostRating, String content) {
         if (meetingRating != null) this.meetingRating = meetingRating;
         if (hostRating != null) this.hostRating = hostRating;
         if (content != null) this.content = content;

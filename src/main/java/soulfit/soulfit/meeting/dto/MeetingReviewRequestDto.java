@@ -2,7 +2,8 @@ package soulfit.soulfit.meeting.dto;
 
 import jakarta.validation.constraints.DecimalMax;
 import jakarta.validation.constraints.DecimalMin;
-import lombok.Getter;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.meeting.domain.Meeting;
@@ -10,16 +11,21 @@ import soulfit.soulfit.meeting.domain.MeetingReview;
 
 import java.util.List;
 
-@Getter
+@Data
+@NoArgsConstructor
+@Builder
+@AllArgsConstructor
 public class MeetingReviewRequestDto {
 
     @DecimalMin("0.0")
     @DecimalMax("5.0")
-    private int meetingRating;
+    @NotNull
+    private Double meetingRating;
 
     @DecimalMin("0.0")
     @DecimalMax("5.0")
-    private int hostRating;
+    @NotNull
+    private Double hostRating;
 
     private String content;
 
