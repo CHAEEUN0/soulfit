@@ -4,16 +4,21 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.meeting.domain.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 @Builder
+@AllArgsConstructor
 public class MeetingRequestDto {
 
     @NotBlank
@@ -38,6 +43,7 @@ public class MeetingRequestDto {
 
     private List<MultipartFile> images;
 
+    @NotNull
     private List<Long> keywordIds;
 
     @NotNull
@@ -46,6 +52,7 @@ public class MeetingRequestDto {
     @NotNull
     private LocalDateTime meetingTime;
 
+    @NotNull
     private Integer duration;
 
     @NotNull
@@ -65,8 +72,8 @@ public class MeetingRequestDto {
                 .location(this.location)
                 .fee(this.fee)
                 .feeDescription(this.feeDescription)
-                .supplies(this.supplies)
-                .schedules(this.schedules)
+                .supplies(this.supplies != null ? this.supplies : new ArrayList<>())
+                .schedules(this.schedules != null ? this.schedules : new ArrayList<>())
                 .canPickup(this.canPickup)
                 .meetingTime(this.meetingTime)
                 .duration(this.duration)

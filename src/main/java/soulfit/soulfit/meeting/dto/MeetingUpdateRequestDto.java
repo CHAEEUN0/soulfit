@@ -3,8 +3,10 @@ package soulfit.soulfit.meeting.dto;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.meeting.domain.Category;
 import soulfit.soulfit.meeting.domain.Location;
@@ -15,7 +17,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
+@NoArgsConstructor
 @Builder
+@AllArgsConstructor
 public class MeetingUpdateRequestDto {
 
 
