@@ -10,8 +10,6 @@ import java.time.LocalDateTime;
 @Table(name = "notification")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
-@Builder
 public class Notification {
 
     @Id
@@ -22,6 +20,11 @@ public class Notification {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "receiver_id", nullable = false)
     private UserAuth receiver;
+
+    // 알림을 발생시킨 사용자
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sender_id")
+    private UserAuth sender;
 
     // 알림 유형 (ENUM)
     @Enumerated(EnumType.STRING)
@@ -39,11 +42,23 @@ public class Notification {
     private Long targetId;
 
     @Column(name = "is_read", nullable = false)
-    @Builder.Default
     private boolean isRead = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    @Builder
+    public Notification(Long id, UserAuth receiver, UserAuth sender, NotificationType type, String title, String body, Long targetId, boolean isRead, LocalDateTime createdAt) {
+        this.id = id;
+        this.receiver = receiver;
+        this.sender = sender;
+        this.type = type;
+        this.title = title;
+        this.body = body;
+        this.targetId = targetId;
+        this.isRead = isRead;
+        this.createdAt = createdAt;
+    }
 
     @PrePersist
     public void prePersist() {

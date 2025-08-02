@@ -14,5 +14,6 @@ public class NotificationResponse {
     private Long targetId;
     private boolean isRead;
     private String createdAt;
+    private String thumbnailUrl;
 }
 

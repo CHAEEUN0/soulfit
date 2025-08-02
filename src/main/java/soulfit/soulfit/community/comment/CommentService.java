@@ -8,6 +8,9 @@ import soulfit.soulfit.community.comment.dto.CommentRequestDto;
 import soulfit.soulfit.community.post.Post;
 import soulfit.soulfit.community.post.PostRepository;
 
+import soulfit.soulfit.notification.domain.NotificationType;
+import soulfit.soulfit.notification.service.NotificationService;
+
 import java.util.List;
 
 
@@ -17,6 +20,7 @@ public class CommentService {
 
     private final CommentRepository commentRepository;
     private final PostRepository postRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public Comment createComment(Long postId, CommentRequestDto requestDto, UserAuth user){
@@ -43,7 +47,19 @@ public class CommentService {
         if (parent != null) {
             parent.addChild(comment);
         }
-        return commentRepository.save(comment);
+        
+        commentRepository.save(comment);
+
+        notificationService.sendNotification(
+                user,
+                post.getPoster(),
+                NotificationType.COMMENT,
+                "New Comment",
+                user.getUsername() + " commented on your post.",
+                post.getId()
+        );
+
+        return comment;
     }
 
 

@@ -47,6 +47,13 @@ public class UserAuth implements UserDetails {
     @OneToOne(mappedBy = "userAuth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private UserProfile userProfile;
 
+    public void setUserProfile(UserProfile userProfile) {
+        this.userProfile = userProfile;
+        if (userProfile != null) {
+            userProfile.setUserAuth(this);
+        }
+    }
+
     @OneToOne(mappedBy = "userAuth", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private MatchingProfile matchingProfile;
 
