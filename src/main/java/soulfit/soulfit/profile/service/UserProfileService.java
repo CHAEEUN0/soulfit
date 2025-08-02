@@ -36,6 +36,7 @@ public class UserProfileService {
     private final PhotoAlbumRepository photoAlbumRepository;
     private final PhotoRepository photoRepository;
     private final S3Uploader s3Uploader;
+    private final ProfileAnalysisService profileAnalysisService; // AI 분석 서비스 추가
     private final Logger logger = LoggerFactory.getLogger(UserProfileService.class);
 
     private static final String PROFILE_IMAGE_DIR = "profile-images/";
@@ -98,6 +99,10 @@ public class UserProfileService {
             newKeyword.setUserProfile(userProfile);
             userProfile.getPersonalityKeywords().add(newKeyword);
         }
+
+        //TODO : AI 연동 후 주석 해제
+        // AI 기반 프로필 분석 실행
+        // profileAnalysisService.analyzeAndProcessProfile(userId);
     }
 
     // 4. 사진 업로드

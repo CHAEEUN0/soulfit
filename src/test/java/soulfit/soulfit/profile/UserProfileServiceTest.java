@@ -20,6 +20,7 @@ import soulfit.soulfit.profile.repository.PersonalityKeywordRepository;
 import soulfit.soulfit.profile.repository.PhotoAlbumRepository;
 import soulfit.soulfit.profile.repository.PhotoRepository;
 import soulfit.soulfit.profile.repository.UserProfileRepository;
+import soulfit.soulfit.profile.service.ProfileAnalysisService;
 import soulfit.soulfit.profile.service.UserProfileService;
 
 import java.time.LocalDate;
@@ -52,6 +53,9 @@ class UserProfileServiceTest {
 
     @Mock
     private S3Uploader s3Uploader;
+
+    @Mock
+    private ProfileAnalysisService profileAnalysisService; // AI 분석 서비스 Mock 추가
 
     private UserAuth user;
     private UserProfile userProfile;
@@ -180,5 +184,23 @@ class UserProfileServiceTest {
         // then
         verify(s3Uploader).delete("key");
         verify(photoRepository).delete(photo);
+    }
+
+    @Test
+    @DisplayName("프로필 수정 시 AI 분석 서비스가 호출된다")
+    void updateUserProfile_triggersAIAnalysis() {
+        // given
+        UpdateUserProfileRequest request = new UpdateUserProfileRequest();
+        request.setBio("Updated bio");
+        request.setMbti(MbtiType.ESTJ);
+        request.setPersonalityKeywords(List.of("keyword1"));
+
+        given(userProfileRepository.findByUserAuthId(1L)).willReturn(Optional.of(userProfile));
+
+        // when
+        userProfileService.updateUserProfile(1L, request, null);
+
+        // then
+        verify(profileAnalysisService).analyzeAndProcessProfile(1L);
     }
 }
