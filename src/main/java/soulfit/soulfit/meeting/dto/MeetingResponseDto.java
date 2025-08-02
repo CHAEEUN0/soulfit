@@ -7,7 +7,7 @@ import soulfit.soulfit.meeting.domain.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Builder
+@Builder(toBuilder = true)
 @Data
 public class MeetingResponseDto {
 
@@ -39,6 +39,8 @@ public class MeetingResponseDto {
     private int currentParticipants;
 
     private LocalDateTime createdAt;
+
+    private List<String> recommendationReasons;
 
     //호스트 정보, 리뷰 평균평점, 리뷰 추가
 
