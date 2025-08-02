@@ -3,6 +3,7 @@ package soulfit.soulfit.authentication.entity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,6 +11,7 @@ import soulfit.soulfit.matching.profile.domain.MatchingProfile;
 import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.profile.domain.UserProfile;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -40,6 +42,10 @@ public class UserAuth implements UserDetails {
     private AccountStatus accountStatus = AccountStatus.ACTIVE;
 
     private boolean enabled = true;
+
+    @CreatedDate
+    @Column(updatable = false)
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "host", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Meeting> meetings = new ArrayList<>();
