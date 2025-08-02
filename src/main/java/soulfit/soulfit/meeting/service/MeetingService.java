@@ -8,13 +8,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
-import soulfit.soulfit.meeting.domain.Keyword;
-import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.domain.MeetingImage;
+import soulfit.soulfit.meeting.client.AiMeetingClient;
+import soulfit.soulfit.meeting.domain.*;
 import soulfit.soulfit.meeting.dto.MeetingRequestDto;
 import soulfit.soulfit.meeting.dto.MeetingResponseDto;
 import soulfit.soulfit.meeting.dto.MeetingUpdateRequestDto;
 import soulfit.soulfit.meeting.dto.SearchFilter;
+import soulfit.soulfit.meeting.dto.ai.AiRequestDto;
+import soulfit.soulfit.meeting.dto.ai.AiResponseDto;
+import soulfit.soulfit.meeting.repository.MeetingBookmarkRepository;
 import soulfit.soulfit.meeting.repository.MeetingKeywordRepository;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
@@ -22,8 +24,11 @@ import soulfit.soulfit.meeting.domain.HostProFile;
 import soulfit.soulfit.meeting.repository.HostProfileRepository;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +41,66 @@ public class MeetingService {
     private final MeetingKeywordRepository meetingKeyWordRepository;
     private final MeetingParticipantRepository meetingParticipantRepository;
     private final HostProfileRepository hostProfileRepository;
+    private final AiMeetingClient aiMeetingClient;
+    private final MeetingBookmarkRepository meetingBookmarkRepository;
+
+
+    public List<MeetingResponseDto> getRecommendedMeetings(UserAuth user) {
+        Pageable limit = PageRequest.of(0, 5);
+        List<Meeting> participatedMeetings = meetingParticipantRepository.findMeetingUserParticipated(user, limit).getContent();
+        List<Meeting> bookmarkedMeetings = meetingBookmarkRepository.findByUserOrderByCreatedAtDesc(user, limit)
+                .map(MeetingBookmark::getMeeting).getContent();
+
+        AiRequestDto requestDto = AiRequestDto.builder()
+                .userId(user.getId())
+                .recentCategories(
+                        participatedMeetings.stream()
+                                .map(m -> m.getCategory().name())
+                                .collect(Collectors.toList())
+                )
+                .recentKeywords(
+                        participatedMeetings.stream()
+                                .flatMap(m -> m.getKeywords().stream().map(Keyword::getName))
+                                .collect(Collectors.toList())
+                )
+                .bookmarkedCategories(
+                        bookmarkedMeetings.stream()
+                                .map(m -> m.getCategory().name())
+                                .collect(Collectors.toList())
+                )
+                .build();
+
+        try {
+            AiResponseDto response = aiMeetingClient.getRecommendations(requestDto);
+            if (response == null || response.getRecommendations() == null || response.getRecommendations().isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            Map<Long, List<String>> reasonsMap = response.getRecommendations().stream()
+                    .collect(Collectors.toMap(AiResponseDto.RecommendationItem::getMeetingId, AiResponseDto.RecommendationItem::getReasonKeywords));
+
+            List<Long> recommendedIds = response.getRecommendations().stream()
+                    .map(AiResponseDto.RecommendationItem::getMeetingId)
+                    .collect(Collectors.toList());
+
+            return meetingRepository.findAllById(recommendedIds).stream()
+                    .map(meeting -> {
+                        MeetingResponseDto dto = MeetingResponseDto.from(meeting);
+                        dto.setRecommendationReasons(reasonsMap.get(meeting.getId()));
+                        return dto;
+                    })
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            // AI 서버 통신 실패 시 대체 로직 (예: 인기순 또는 최신순 반환)
+            return getAllMeetings(PageRequest.of(0, 10, Sort.by(Sort.Direction.DESC, "bookmarkCount")))
+                    .stream()
+                    .map(MeetingResponseDto::from)
+                    .collect(Collectors.toList());
+        }
+    }
+
+    // ... (기존 메서드들)
 
     public Page<Meeting> getAllMeetings(Pageable pageable){
         return meetingRepository.findAll(pageable);
@@ -159,6 +224,4 @@ public class MeetingService {
         Pageable sortedPageable  = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "meetingTime"));
         return meetingParticipantRepository.findMeetingUserParticipated(user, sortedPageable);
     }
-
-
 }
