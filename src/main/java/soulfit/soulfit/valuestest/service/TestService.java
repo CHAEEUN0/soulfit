@@ -1,16 +1,16 @@
 package soulfit.soulfit.valuestest.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.valuestest.domain.*;
 import soulfit.soulfit.valuestest.dto.*;
-import soulfit.soulfit.valuestest.repository.ChoiceRepository;
-import soulfit.soulfit.valuestest.repository.TestAnswerRepository;
-import soulfit.soulfit.valuestest.repository.TestQuestionRepository;
-import soulfit.soulfit.valuestest.repository.TestSessionRepository;
+import soulfit.soulfit.valuestest.repository.*;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +25,9 @@ public class TestService {
     private final ChoiceRepository choiceRepository;
     private final TestSessionRepository testSessionRepository;
     private final TestAnswerRepository testAnswerRepository;
+    private final ValuesTestAnalysisReportRepository valuesTestAnalysisReportRepository;
+    private final ValuesTestAnalysisService valuesTestAnalysisService; // AI 분석 서비스 주입
+    private final ObjectMapper objectMapper;
 
     /**
      * 검사 시작: 세션 생성 + 질문 목록 반환
@@ -95,6 +98,8 @@ public class TestService {
         session.setSubmittedAt(LocalDateTime.now());
         session.setStatus(SessionStatus.COMPLETED);
         testSessionRepository.save(session);
+
+        valuesTestAnalysisService.analyzeAndSaveReport(session);
     }
 
     @Transactional
@@ -148,11 +153,26 @@ public class TestService {
             );
         }).collect(Collectors.toList());
 
+                // 4. AI 분석 결과 조회
+        ValuesTestAnalysisReport report = valuesTestAnalysisReportRepository.findByTestSessionId(session.getId())
+                .orElse(null);
+
+        UserTestResult.AIResult aiResult = null;
+        if (report != null) {
+            try {
+                List<String> topValues = objectMapper.readValue(report.getTopValues(), new TypeReference<List<String>>() {});
+                aiResult = new UserTestResult.AIResult(report.getAnalysisSummary(), topValues);
+            } catch (IOException e) {
+                // 로그 기록
+            }
+        }
+
         return new UserTestResult(
                 session.getId(),
                 session.getTestType(),
                 session.getSubmittedAt(),
-                answerDtos
+                answerDtos,
+                aiResult
         );
     }
 

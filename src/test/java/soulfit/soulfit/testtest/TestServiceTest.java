@@ -27,7 +27,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest
+@SpringBootTest(properties = {"ai.server.url=http://localhost:8081"})
 @AutoConfigureMockMvc
 @Transactional
 @ActiveProfiles("test")
