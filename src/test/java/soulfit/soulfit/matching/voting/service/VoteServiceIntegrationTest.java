@@ -70,7 +70,9 @@ class VoteServiceIntegrationTest {
         VoteFormCreateRequest request = new VoteFormCreateRequest(
                 "가장 마음에 드는 프로필 사진은?",
                 "A/B 투표입니다.",
-                Arrays.asList("사진 1", "사진 2")
+                Arrays.asList("사진 1", "사진 2"),
+                "PROFILE", // targetType 추가
+                null // imageUrl 추가
         );
 
         // when
@@ -153,15 +155,17 @@ class VoteServiceIntegrationTest {
         VoteFormCreateRequest request = new VoteFormCreateRequest(
                 "테스트 투표",
                 "설명",
-                Arrays.asList("옵션1", "옵션2")
+                Arrays.asList("옵션1", "옵션2"),
+                "PROFILE", // targetType 추가
+                null // imageUrl 추가
         );
         Long voteFormId = voteService.createVoteForm(userA, request);
         return voteFormRepository.findById(voteFormId).orElseThrow();
     }
 
     @Test
-    @DisplayName("투표 폼 조회 시 투표 생성자의 프로필 이미지 URL이 포함된다")
-    void getVoteForm_includesCreatorProfileImageUrl() {
+    @DisplayName("투표 폼 조회 시 모든 필드가 올바르게 포함된다 (프로필 투표)")
+    void getVoteForm_includesAllFields_forProfileVoteForm() {
         // given
         // userA가 생성한 투표 폼 (setUp에서 프로필 이미지 URL 설정됨)
         VoteForm voteForm = createTestVoteForm();
@@ -171,8 +175,56 @@ class VoteServiceIntegrationTest {
 
         // then
         assertThat(response.getId()).isEqualTo(voteForm.getId());
+        assertThat(response.getTitle()).isEqualTo(voteForm.getTitle());
         assertThat(response.getCreatorId()).isEqualTo(userA.getId());
         assertThat(response.getCreatorUsername()).isEqualTo(userA.getUsername());
         assertThat(response.getCreatorProfileImageUrl()).isEqualTo("http://example.com/userA_profile.jpg");
+        assertThat(response.getTargetType()).isEqualTo(VoteForm.TargetType.PROFILE.name());
+        assertThat(response.getImageUrl()).isNull(); // 프로필 투표이므로 imageUrl은 null
+        assertThat(response.getOptions()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("이미지 투표 양식을 생성하고 조회 시 이미지 상세 정보가 포함된다")
+    void createImageVoteForm_and_getVoteForm_includesImageDetails() {
+        // given
+        String testImageUrl = "http://test.com/test_image.jpg";
+        VoteFormCreateRequest request = new VoteFormCreateRequest(
+                "이 사진 어떤가요?",
+                "사진에 대한 투표입니다.",
+                Arrays.asList("좋아요", "별로예요"),
+                "IMAGE",
+                testImageUrl
+        );
+
+        // when
+        Long voteFormId = voteService.createVoteForm(userA, request);
+        VoteFormResponse response = voteService.getVoteForm(voteFormId);
+
+        // then
+        assertThat(voteFormId).isNotNull();
+        assertThat(response.getId()).isEqualTo(voteFormId);
+        assertThat(response.getTitle()).isEqualTo("이 사진 어떤가요?");
+        assertThat(response.getTargetType()).isEqualTo(VoteForm.TargetType.IMAGE.name());
+        assertThat(response.getImageUrl()).isEqualTo(testImageUrl);
+        assertThat(response.getOptions()).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("이미지 투표 양식 생성 시 imageUrl이 없으면 예외가 발생한다")
+    void createImageVoteForm_withoutImageUrl_throwsException() {
+        // given
+        VoteFormCreateRequest request = new VoteFormCreateRequest(
+                "이 사진 어떤가요?",
+                "사진에 대한 투표입니다.",
+                Arrays.asList("좋아요", "별로예요"),
+                "IMAGE",
+                null // imageUrl 누락
+        );
+
+        // when & then
+        assertThrows(IllegalArgumentException.class, () -> {
+            voteService.createVoteForm(userA, request);
+        });
     }
 }

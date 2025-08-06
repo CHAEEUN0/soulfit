@@ -43,7 +43,7 @@ public class VoteService {
                 .map(userProfile -> userProfile.getProfileImageUrl())
                 .orElse(null); // 프로필 이미지가 없을 경우 null
 
-        return new VoteFormResponse(voteForm.getId(), voteForm.getTitle(), voteForm.getCreator().getId(), voteForm.getCreator().getUsername(), creatorProfileImageUrl, optionResponses);
+        return new VoteFormResponse(voteForm.getId(), voteForm.getTitle(), voteForm.getCreator().getId(), voteForm.getCreator().getUsername(), creatorProfileImageUrl, voteForm.getTargetType().name(), voteForm.getImageUrl(), optionResponses);
     }
 
     @Transactional
@@ -69,13 +69,20 @@ public class VoteService {
 
     @Transactional
     public Long createVoteForm(UserAuth creator, VoteFormCreateRequest request) {
+        VoteForm.TargetType targetType = VoteForm.TargetType.valueOf(request.getTargetType().toUpperCase());
+
+        if (targetType == VoteForm.TargetType.IMAGE && (request.getImageUrl() == null || request.getImageUrl().isEmpty())) {
+            throw new IllegalArgumentException("이미지 투표 양식에는 imageUrl이 필수입니다.");
+        }
+
         VoteForm voteForm = VoteForm.builder()
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .creator(creator)
                 .active(true)
                 .multiSelect(false) // 기본값 설정, 필요시 요청에서 받을 수 있음
-                .targetType(VoteForm.TargetType.PROFILE) // 기본값 설정
+                .targetType(targetType)
+                .imageUrl(request.getImageUrl()) // imageUrl 설정
                 .build();
 
         List<VoteOption> options = request.getOptions().stream()

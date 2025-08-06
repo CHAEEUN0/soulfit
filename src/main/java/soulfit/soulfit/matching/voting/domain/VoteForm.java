@@ -28,6 +28,8 @@ public class VoteForm {
 
     private String description;
 
+    private String imageUrl; // 투표 대상이 이미지일 경우 이미지 URL
+
     @Enumerated(EnumType.STRING)
     @Column(name = "target_type", nullable = false)
     private TargetType targetType;  // PROFILE, IMAGE 등
