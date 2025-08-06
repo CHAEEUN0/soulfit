@@ -14,5 +14,13 @@ public class UserTestResult {
     private TestType testType;
     private LocalDateTime submittedAt;
     private List<TestAnswerResponse> answers;
+    private AIResult aiResult;
+
+    @Data
+    @AllArgsConstructor
+    public static class AIResult {
+        private String summary;
+        private List<String> topValues;
+    }
 }
 
