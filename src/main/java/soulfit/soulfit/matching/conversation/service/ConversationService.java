@@ -12,6 +12,8 @@ import soulfit.soulfit.matching.conversation.dto.ConversationRequestDto;
 import soulfit.soulfit.matching.conversation.dto.ConversationResponseDto;
 import soulfit.soulfit.matching.conversation.dto.UpdateRequestStatusDto;
 import soulfit.soulfit.matching.conversation.repository.ConversationRequestRepository;
+import soulfit.soulfit.notification.domain.NotificationType;
+import soulfit.soulfit.notification.service.NotificationService;
 
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
@@ -26,6 +28,7 @@ public class ConversationService {
 
     private final ConversationRequestRepository conversationRequestRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     /**
      * 대화 신청 생성
@@ -57,6 +60,18 @@ public class ConversationService {
 
         ConversationRequest savedRequest = conversationRequestRepository.save(newRequest);
 
+        // 5. 알림 생성
+        String notificationTitle = "새로운 대화 신청";
+        String notificationBody = fromUser.getUsername() + "님께서 대화를 신청하셨습니다.";
+        notificationService.sendNotification(
+                fromUser,
+                toUser,
+                NotificationType.CONVERSATION_REQUEST,
+                notificationTitle,
+                notificationBody,
+                savedRequest.getId()
+        );
+
         log.info("대화 신청이 생성되었습니다. from: {}, to: {}", fromUser.getId(), toUser.getId());
         return ConversationResponseDto.from(savedRequest);
     }
@@ -79,12 +94,24 @@ public class ConversationService {
         RequestStatus newStatus = RequestStatus.valueOf(statusDto.status().toUpperCase());
         request.updateStatus(newStatus);
 
-        // 4. (미래 확장 지점) 채팅방 생성 로직
+        // 4. (미래 확장 지점) 채팅방 생성 로직 및 알림
         if (newStatus == RequestStatus.ACCEPTED) {
             // TODO: 채팅방 생성 기능 완료 후, 아래 주석을 해제하고 실제 로직을 연동해야 함.
             // ChatRoom newChatRoom = chatService.createChatRoom(request.getFromUser(), request.getToUser());
             // request.setChatRoomId(newChatRoom.getId());
             log.info("대화 신청 #{}이(가) 수락되었습니다. (채팅방 생성 대기)", requestId);
+
+            // 수락 알림 생성
+            String notificationTitle = "대화 신청 수락";
+            String notificationBody = currentUser.getUsername() + "님께서 대화 신청을 수락하셨습니다.";
+            notificationService.sendNotification(
+                    currentUser,
+                    request.getFromUser(),
+                    NotificationType.APPROVED,
+                    notificationTitle,
+                    notificationBody,
+                    request.getId()
+            );
         } else {
             log.info("대화 신청 #{}이(가) 거절되었습니다.", requestId);
         }
