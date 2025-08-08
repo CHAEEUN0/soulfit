@@ -44,15 +44,11 @@ public class MeetingAnswerDto {
     @Getter
     public static class AnswerResponseItem {
         private final Long questionId;
-        private final QuestionType questionType;
         private final String textAnswer;
-        private final List<String> selectedChoices;
 
         public AnswerResponseItem(MeetingAnswer answer) {
             this.questionId = answer.getMeetingQuestion().getId();
-            this.questionType = answer.getMeetingQuestion().getQuestionType();
             this.textAnswer = answer.getTextAnswer();
-            this.selectedChoices = answer.getSelectedChoices();
         }
     }
 }

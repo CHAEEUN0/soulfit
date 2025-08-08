@@ -107,12 +107,11 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             meetingRepository.save(sampleMeeting);
 
-            MeetingQuestion question1 = MeetingQuestion.createMeetingQuestion("운동 경력은 어떻게 되시나요?", QuestionType.TEXT, 1, null);
+            MeetingQuestion question1 = MeetingQuestion.create("운동 경력은 어떻게 되시나요?");
             question1.setMeeting(sampleMeeting);
-            MeetingQuestion question2 = MeetingQuestion.createMeetingQuestion("선호하는 운동 종류는?", QuestionType.MULTIPLE_CHOICE, 2, List.of("요가", "필라테스", "헬스", "크로스핏"));
-            question2.setMeeting(sampleMeeting);
 
-            meetingQuestionRepository.saveAll(List.of(question1, question2));
+
+            meetingQuestionRepository.saveAll(List.of(question1));
 
             // Add 'user' as a participant to the sample meeting
             UserAuth regularUser = userRepository.findByUsername("user").orElseThrow();

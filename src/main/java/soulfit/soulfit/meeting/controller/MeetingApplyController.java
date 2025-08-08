@@ -19,10 +19,10 @@ public class MeetingApplyController {
     private final MeetingApplyService meetingApplyService;
 
     @PostMapping("/{meetingId}/questions")
-    public ResponseEntity<Void> addMeetingQuestions(
+    public ResponseEntity<Void> addMeetingQuestion(
             @PathVariable Long meetingId,
             @RequestBody MeetingQuestionDto.Request request) {
-        meetingApplyService.addMeetingQuestions(meetingId, request);
+        meetingApplyService.addMeetingQuestion(meetingId, request);
         return ResponseEntity.ok().build();
     }
 

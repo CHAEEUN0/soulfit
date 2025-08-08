@@ -32,16 +32,18 @@ public class MeetingApplyService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-    public void addMeetingQuestions(Long meetingId, MeetingQuestionDto.Request request) {
+    public void addMeetingQuestion(Long meetingId, MeetingQuestionDto.Request request) {
+        if (meetingQuestionRepository.existsByMeetingId(meetingId)) {
+            throw new IllegalStateException("하나의 질문만 등록할 수 있습니다.");
+        }
+
         Meeting meeting = meetingRepository.findById(meetingId)
                 .orElseThrow(() -> new IllegalArgumentException("Meeting not found: " + meetingId));
 
-        List<MeetingQuestion> questions = request.getQuestions().stream()
-                .map(MeetingQuestionDto.QuestionItem::toEntity)
-                .peek(question -> question.setMeeting(meeting))
-                .collect(Collectors.toList());
+        MeetingQuestion question = MeetingQuestion.create(request.getQuestionText());
+        question.setMeeting(meeting);
 
-        meetingQuestionRepository.saveAll(questions);
+        meetingQuestionRepository.save(question);
     }
 
     @Transactional(readOnly = true)
@@ -60,11 +62,7 @@ public class MeetingApplyService {
             MeetingQuestion question = meetingQuestionRepository.findById(answerItem.getQuestionId())
                     .orElseThrow(() -> new IllegalArgumentException("Question not found: " + answerItem.getQuestionId()));
 
-            return switch (question.getQuestionType()) {
-                case TEXT -> MeetingAnswer.createTextAnswer(participant, question, answerItem.getTextAnswer());
-                case MULTIPLE_CHOICE ->
-                        MeetingAnswer.createChoiceAnswer(participant, question, answerItem.getSelectedChoices());
-            };
+            return MeetingAnswer.createTextAnswer(participant, question, answerItem.getTextAnswer());
         }).collect(Collectors.toList());
 
         meetingAnswerRepository.saveAll(answers);
