@@ -7,25 +7,25 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
-import soulfit.soulfit.meeting.domain.Meeting;
-import soulfit.soulfit.meeting.domain.MeetingQuestion;
-import soulfit.soulfit.meeting.domain.QuestionType;
-import soulfit.soulfit.meeting.dto.MeetingApplicantDto;
-import soulfit.soulfit.meeting.dto.MeetingQuestionDto;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.meeting.domain.ApprovalStatus;
+import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.domain.MeetingParticipant;
+import soulfit.soulfit.meeting.domain.MeetingQuestion;
+import soulfit.soulfit.meeting.dto.MeetingApplicantDto;
+import soulfit.soulfit.meeting.dto.MeetingQuestionDto;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingQuestionRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
+import soulfit.soulfit.notification.service.NotificationService;
 
 import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -45,26 +45,47 @@ class MeetingApplyServiceTest {
     private MeetingParticipantRepository meetingParticipantRepository;
 
     @Mock
+    private NotificationService notificationService;
+
+    @Mock
     private UserRepository userRepository;
 
     @Test
-    @DisplayName("모임 질문 추가 테스트")
-    void addMeetingQuestions() {
+    @DisplayName("모임 질문 추가 성공")
+    void addMeetingQuestion_success() {
         // given
         long meetingId = 1L;
+        String questionText = "자기소개를 부탁드려요.";
         Meeting meeting = Meeting.builder().id(meetingId).build();
-        MeetingQuestionDto.QuestionItem item1 = new MeetingQuestionDto.QuestionItem("주관식 질문", QuestionType.TEXT, 1, null);
-        MeetingQuestionDto.QuestionItem item2 = new MeetingQuestionDto.QuestionItem("객관식 질문", QuestionType.MULTIPLE_CHOICE, 2, List.of("선택1", "선택2"));
-        MeetingQuestionDto.Request request = new MeetingQuestionDto.Request(List.of(item1, item2));
+        MeetingQuestionDto.Request request = new MeetingQuestionDto.Request(questionText);
 
-        when(meetingRepository.findById(anyLong())).thenReturn(Optional.of(meeting));
+        when(meetingRepository.findById(meetingId)).thenReturn(Optional.of(meeting));
+        when(meetingQuestionRepository.existsByMeetingId(meetingId)).thenReturn(false);
 
         // when
-        meetingApplyService.addMeetingQuestions(meetingId, request);
+        meetingApplyService.addMeetingQuestion(meetingId, request);
 
         // then
         verify(meetingRepository).findById(meetingId);
-        verify(meetingQuestionRepository).saveAll(any(List.class));
+        verify(meetingQuestionRepository).existsByMeetingId(meetingId);
+        verify(meetingQuestionRepository).save(any(MeetingQuestion.class));
+    }
+
+    @Test
+    @DisplayName("모임 질문 추가 실패 - 이미 질문 존재")
+    void addMeetingQuestion_fail_alreadyExists() {
+        // given
+        long meetingId = 1L;
+        String questionText = "자기소개를 부탁드려요.";
+        MeetingQuestionDto.Request request = new MeetingQuestionDto.Request(questionText);
+
+        when(meetingQuestionRepository.existsByMeetingId(meetingId)).thenReturn(true);
+
+        // when & then
+        assertThrows(IllegalStateException.class, () ->
+                meetingApplyService.addMeetingQuestion(meetingId, request)
+        );
+        verify(meetingQuestionRepository).existsByMeetingId(meetingId);
     }
 
     @Test
@@ -72,21 +93,18 @@ class MeetingApplyServiceTest {
     void getMeetingQuestions() {
         // given
         long meetingId = 1L;
-        MeetingQuestion question1 = MeetingQuestion.createMeetingQuestion("주관식 질문", QuestionType.TEXT, 1, null);
-        MeetingQuestion question2 = MeetingQuestion.createMeetingQuestion("객관식 질문", QuestionType.MULTIPLE_CHOICE, 2, List.of("선택1", "선택2"));
-        List<MeetingQuestion> questions = List.of(question1, question2);
+        String questionText = "자기소개를 부탁드려요.";
+        MeetingQuestion question = MeetingQuestion.create(questionText);
+        List<MeetingQuestion> questions = List.of(question);
 
-        when(meetingQuestionRepository.findByMeetingId(anyLong())).thenReturn(questions);
+        when(meetingQuestionRepository.findByMeetingId(meetingId)).thenReturn(questions);
 
         // when
         List<MeetingQuestionDto.Response> responses = meetingApplyService.getMeetingQuestions(meetingId);
 
         // then
-        assertThat(responses).hasSize(2);
-        assertThat(responses.get(0).getQuestionText()).isEqualTo("주관식 질문");
-        assertThat(responses.get(0).getChoices()).isEmpty();
-        assertThat(responses.get(1).getQuestionText()).isEqualTo("객관식 질문");
-        assertThat(responses.get(1).getChoices()).hasSize(2).contains("선택1", "선택2");
+        assertThat(responses).hasSize(1);
+        assertThat(responses.get(0).getQuestionText()).isEqualTo(questionText);
         verify(meetingQuestionRepository).findByMeetingId(meetingId);
     }
 
