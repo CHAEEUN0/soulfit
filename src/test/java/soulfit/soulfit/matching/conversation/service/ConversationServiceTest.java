@@ -5,6 +5,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
@@ -14,13 +15,15 @@ import soulfit.soulfit.matching.conversation.dto.ConversationRequestDto;
 import soulfit.soulfit.matching.conversation.dto.ConversationResponseDto;
 import soulfit.soulfit.matching.conversation.dto.UpdateRequestStatusDto;
 import soulfit.soulfit.matching.conversation.repository.ConversationRequestRepository;
+import soulfit.soulfit.notification.domain.NotificationType;
+import soulfit.soulfit.notification.service.NotificationService;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 
-
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional
@@ -37,6 +40,9 @@ class ConversationServiceTest {
 
     @Autowired
     private EntityManager em;
+
+    @MockitoBean
+    private NotificationService notificationService;
 
     private UserAuth fromUser;
     private UserAuth toUser;
@@ -67,6 +73,16 @@ class ConversationServiceTest {
 
         ConversationRequest savedRequest = conversationRequestRepository.findById(responseDto.id()).get();
         assertThat(savedRequest.getFromUser().getId()).isEqualTo(fromUser.getId());
+
+        // NotificationService 호출 검증
+        verify(notificationService, times(1)).sendNotification(
+                eq(fromUser),
+                eq(toUser),
+                eq(NotificationType.CONVERSATION_REQUEST),
+                eq("새로운 대화 신청"),
+                eq(fromUser.getUsername() + "님께서 대화를 신청하셨습니다."),
+                anyLong()
+        );
     }
 
     @Test
@@ -79,6 +95,9 @@ class ConversationServiceTest {
         assertThatThrownBy(() -> conversationService.createConversationRequest(fromUser, requestDto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("자기 자신에게 대화를 신청할 수 없습니다.");
+
+        // NotificationService가 호출되지 않았음을 검증
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -86,12 +105,17 @@ class ConversationServiceTest {
     void createConversationRequest_Fail_AlreadyPending() {
         // Given
         conversationService.createConversationRequest(fromUser, new ConversationRequestDto(toUser.getId(), "첫 번째 요청"));
+        reset(notificationService); // 첫 번째 요청으로 인한 호출 초기화
+
         ConversationRequestDto duplicateRequestDto = new ConversationRequestDto(toUser.getId(), "두 번째 요청");
 
         // When & Then
         assertThatThrownBy(() -> conversationService.createConversationRequest(fromUser, duplicateRequestDto))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("이미 처리 대기 중인 대화 신청이 존재합니다.");
+
+        // NotificationService가 호출되지 않았음을 검증
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -99,6 +123,8 @@ class ConversationServiceTest {
     void updateRequestStatus_Accept_Success() {
         // Given
         ConversationResponseDto createdDto = conversationService.createConversationRequest(fromUser, new ConversationRequestDto(toUser.getId(), "수락 테스트"));
+        reset(notificationService); // createConversationRequest 호출로 인한 호출 초기화
+
         UpdateRequestStatusDto statusDto = new UpdateRequestStatusDto("ACCEPTED");
 
         // When
@@ -106,6 +132,16 @@ class ConversationServiceTest {
 
         // Then
         assertThat(updatedDto.status()).isEqualTo(RequestStatus.ACCEPTED);
+
+        // NotificationService 호출 검증
+        verify(notificationService, times(1)).sendNotification(
+                eq(toUser),
+                eq(fromUser),
+                eq(NotificationType.APPROVED),
+                eq("대화 신청 수락"),
+                eq(toUser.getUsername() + "님께서 대화 신청을 수락하셨습니다."),
+                anyLong()
+        );
     }
 
     @Test
@@ -113,6 +149,8 @@ class ConversationServiceTest {
     void updateRequestStatus_Fail_NoPermission() {
         // Given
         ConversationResponseDto createdDto = conversationService.createConversationRequest(fromUser, new ConversationRequestDto(toUser.getId(), "권한 테스트"));
+        reset(notificationService); // createConversationRequest 호출로 인한 호출 초기화
+
         UpdateRequestStatusDto statusDto = new UpdateRequestStatusDto("ACCEPTED");
         UserAuth otherUser = userRepository.save(new UserAuth("otherUser", "pw", "other@test.com"));
 
@@ -120,6 +158,9 @@ class ConversationServiceTest {
         assertThatThrownBy(() -> conversationService.updateRequestStatus(createdDto.id(), otherUser, statusDto))
                 .isInstanceOf(EntityNotFoundException.class)
                 .hasMessageContaining("요청을 찾을 수 없거나 처리할 권한이 없습니다.");
+
+        // NotificationService가 호출되지 않았음을 검증
+        verifyNoInteractions(notificationService);
     }
 
     @Test
@@ -135,6 +176,8 @@ class ConversationServiceTest {
         // Then
         assertThat(receivedList).hasSize(2);
         assertThat(receivedList.get(0).toUserId()).isEqualTo(toUser.getId());
+
+        // 이 테스트는 알림 발송과 직접적인 관련이 없으므로, 알림 서비스 호출 검증은 생략하거나 verifyNoMoreInteractions 등으로 추가 검증 가능
     }
 
     @Test
@@ -149,5 +192,7 @@ class ConversationServiceTest {
         // Then
         assertThat(sentList).hasSize(1);
         assertThat(sentList.get(0).fromUserId()).isEqualTo(fromUser.getId());
+
+        // 이 테스트는 알림 발송과 직접적인 관련이 없으므로, 알림 서비스 호출 검증은 생략하거나 verifyNoMoreInteractions 등으로 추가 검증 가능
     }
 }
