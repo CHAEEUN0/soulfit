@@ -7,11 +7,12 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.client.RestClientTest;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestTemplate;
@@ -58,7 +59,8 @@ public class ValuesTestAnalysisIntegrationTest {
     private ValuesTestAnalysisReportRepository reportRepository;
 
     @Autowired
-    private RestTemplate restTemplate;
+    @Qualifier("aiRestTemplate") // Use the AI-specific RestTemplate
+    private RestTemplate aiRestTemplate; // Renamed for clarity
 
     @Autowired
     private TestQuestionRepository testQuestionRepository;
@@ -75,8 +77,8 @@ public class ValuesTestAnalysisIntegrationTest {
 
     @BeforeEach
     void setUp() {
-        // MockRestServiceServer 초기화
-        mockServer = MockRestServiceServer.createServer(restTemplate);
+        mockServer = MockRestServiceServer.createServer(aiRestTemplate);
+
 
         // 테스트 유저 생성 및 저장
         testUser = new UserAuth();
@@ -125,8 +127,8 @@ public class ValuesTestAnalysisIntegrationTest {
 
         // AI 서버의 예상 응답 설정
         String expectedResponseJson = objectMapper.writeValueAsString(Map.of(
-                "analysisSummary", "This is a test summary.",
-                "topValues", List.of("Honesty", "Creativity")
+                "analysis_summary", "This is a test summary.",
+                "top_values", List.of("Honesty", "Creativity")
         ));
         log.info("Step 4: Mocking AI server response.");
 
@@ -194,10 +196,11 @@ public class ValuesTestAnalysisIntegrationTest {
         log.info("Step 3: Prepared answer submission request for session ID: {}", sessionId);
 
         String expectedResponseJson = objectMapper.writeValueAsString(Map.of(
-                "analysisSummary", "AI-powered analysis result.",
-                "topValues", List.of("Growth", "Collaboration")
+                "analysis_summary", "AI-powered analysis result.",
+                "top_values", List.of("Growth", "Collaboration")
         ));
         log.info("Step 4: Mocking AI server response.");
+
 
         mockServer.expect(requestTo("http://localhost:8081/analyze-values"))
                 .andExpect(method(HttpMethod.POST))
