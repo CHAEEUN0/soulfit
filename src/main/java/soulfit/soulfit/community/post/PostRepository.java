@@ -18,6 +18,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Page<Post> findByPostCategoryOrderByCreatedAtDesc(PostCategory category, Pageable pageable);
     Page<Post> findByPostCategoryOrderByLikeCountDesc(PostCategory category, Pageable pageable);
 
+    int countByPoster(UserAuth user);
+
 
 }
 

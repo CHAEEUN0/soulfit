@@ -33,6 +33,12 @@ public class MeetingController {
      * 인기순 /api/meetings?sort=bookmarkCount,desc
      * 최신순 /api/meetings?sort=createAt,desc
      */
+    @GetMapping("meetings/recommended")
+    public ResponseEntity<List<MeetingResponseDto>> getRecommendedMeetings(@AuthenticationPrincipal UserAuth user) {
+        List<MeetingResponseDto> result = meetingService.getRecommendedMeetings(user);
+        return ResponseEntity.ok(result);
+    }
+
     @GetMapping("meetings")
     public ResponseEntity<Page<MeetingResponseDto>> getMeetings(Pageable pageable){
         Page<MeetingResponseDto> result = meetingService.getAllMeetings(pageable).map(MeetingResponseDto::from);
