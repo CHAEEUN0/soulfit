@@ -74,6 +74,7 @@ public class SecurityConfig {
                                 "/webjars/**",
                                 "/api/swagger-config"     // 이 부분 추가!!
                         ).permitAll()
+                        .requestMatchers("/ws").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/debug/**").permitAll()  // 디버깅용 엔드포인트 추가
                         .requestMatchers("/h2-console/**").permitAll()
