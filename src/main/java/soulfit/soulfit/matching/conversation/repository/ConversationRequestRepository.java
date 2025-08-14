@@ -1,6 +1,9 @@
 package soulfit.soulfit.matching.conversation.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
 import soulfit.soulfit.matching.conversation.domain.RequestStatus;
 
@@ -9,6 +12,21 @@ import java.util.Optional;
 import java.util.List;
 
 public interface ConversationRequestRepository extends JpaRepository<ConversationRequest, Long> {
+
+    @Query("SELECT cr FROM ConversationRequest cr " +
+            "JOIN FETCH cr.fromUser fu JOIN FETCH fu.userProfile " +
+            "JOIN FETCH cr.toUser tu JOIN FETCH tu.userProfile " +
+            "WHERE cr.toUser = :user AND cr.status = :status " +
+            "ORDER BY cr.createdAt DESC")
+    List<ConversationRequest> findByToUserAndStatusWithProfiles(@Param("user") UserAuth user, @Param("status") RequestStatus status);
+
+    @Query("SELECT cr FROM ConversationRequest cr " +
+            "JOIN FETCH cr.fromUser fu JOIN FETCH fu.userProfile " +
+            "JOIN FETCH cr.toUser tu JOIN FETCH tu.userProfile " +
+            "WHERE cr.fromUser = :user AND cr.status = :status " +
+            "ORDER BY cr.createdAt DESC")
+    List<ConversationRequest> findByFromUserAndStatusWithProfiles(@Param("user") UserAuth user, @Param("status") RequestStatus status);
+
 
     List<ConversationRequest> findByToUserIdAndStatusOrderByCreatedAtDesc(Long toUserId, RequestStatus status);
 
