@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-import soulfit.soulfit.authentication.config.DataInitializer;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.report.domain.Report;
@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class ReportServiceTest {
 
     @Autowired
@@ -34,8 +35,6 @@ class ReportServiceTest {
     @MockitoBean
     private UserRepository userAuthRepository;
 
-    @MockitoBean
-    private DataInitializer dataInitializer;
 
     @Autowired
     private EntityManager em;
