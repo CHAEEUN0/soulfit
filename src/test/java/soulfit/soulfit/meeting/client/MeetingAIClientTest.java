@@ -40,6 +40,7 @@ class MeetingAIClientTest {
 
 
     @Autowired
+    @Qualifier("snakeCaseObjectMapper")
     private ObjectMapper objectMapper;
 
     @Value("${ai.server.url}")
