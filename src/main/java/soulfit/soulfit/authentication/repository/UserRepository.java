@@ -9,7 +9,7 @@ import soulfit.soulfit.authentication.entity.UserAuth;
 import java.util.Optional;
 
 @Repository
-public interface UserRepository extends JpaRepository<UserAuth, Long> {
+public interface UserRepository extends JpaRepository<UserAuth, Long>, UserRepositoryCustom {
     Optional<UserAuth> findByUsername(String username);
     Optional<UserAuth> findByEmail(String email);
     Boolean existsByUsername(String username);
