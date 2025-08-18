@@ -16,4 +16,6 @@ public interface SwipeRepository extends JpaRepository<Swipe, Long> {
 
     // 특정 사용자를 'LIKE'한 모든 Swipe 기록을 조회
     List<Swipe> findBySwipedAndType(UserAuth swiped, SwipeType type);
+
+    List<Swipe> findBySwiper(UserAuth swiper);
 }

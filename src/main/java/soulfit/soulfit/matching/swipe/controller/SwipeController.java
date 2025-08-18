@@ -12,6 +12,7 @@ import soulfit.soulfit.matching.swipe.dto.SwipeUserResponse;
 import soulfit.soulfit.matching.swipe.service.SwipeService;
 
 import java.util.List;
+import soulfit.soulfit.matching.swipe.dto.SwipeTargetUserResponse;
 
 @RestController
 @RequestMapping("/api/swipes")
@@ -39,5 +40,33 @@ public class SwipeController {
     public ResponseEntity<List<SwipeUserResponse>> getUsersWhoLikedMe(@AuthenticationPrincipal UserAuth user) {
         List<SwipeUserResponse> users = swipeService.getUsersWhoLikedMe(user);
         return ResponseEntity.ok(users);
+    }
+
+    @GetMapping("/targets")
+    public ResponseEntity<List<SwipeTargetUserResponse>> getPotentialSwipeTargets(
+            @AuthenticationPrincipal UserAuth currentUser,
+            @RequestParam(required = false) Double currentUserLatitude,
+            @RequestParam(required = false) Double currentUserLongitude,
+            @RequestParam(required = false) String region,
+            @RequestParam(required = false) Integer minHeight,
+            @RequestParam(required = false) Integer maxHeight,
+            @RequestParam(required = false) Integer minAge,
+            @RequestParam(required = false) Integer maxAge,
+            @RequestParam(required = false) Double maxDistanceInKm,
+            @RequestParam(required = false) String smokingStatus,
+            @RequestParam(required = false) String drinkingStatus
+    ) {
+        List<SwipeTargetUserResponse> targets = swipeService.getPotentialSwipeTargets(
+                currentUser,
+                currentUserLatitude,
+                currentUserLongitude,
+                region,
+                minHeight, maxHeight,
+                minAge, maxAge,
+                maxDistanceInKm,
+                smokingStatus,
+                drinkingStatus
+        );
+        return ResponseEntity.ok(targets);
     }
 }
