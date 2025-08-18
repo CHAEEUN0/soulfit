@@ -91,6 +91,11 @@ public class UserProfileService {
         userProfile.setBio(request.getBio());
         userProfile.setMbti(request.getMbti());
 
+        // 지역 정보 업데이트 로직 추가
+        userProfile.setRegion(request.getRegion());
+        userProfile.setLatitude(request.getLatitude());
+        userProfile.setLongitude(request.getLongitude());
+
         // 기존 키워드 제거 후 새로운 키워드 추가
         personalityKeywordRepository.deleteAllByUserProfile(userProfile);
         userProfile.getPersonalityKeywords().clear(); // Cascade.ALL 및 orphanRemoval=true를 위해 컬렉션도 클리어

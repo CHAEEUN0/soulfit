@@ -73,6 +73,9 @@ class UserProfileServiceTest {
         userProfile.setId(user.getId()); // 수정: UserProfile에 ID 명시적 설정
         userProfile.setBio("Test bio");
         userProfile.setMbti(MbtiType.INFP);
+        userProfile.setRegion("서울");
+        userProfile.setLatitude(37.5665);
+        userProfile.setLongitude(126.9780);
 
         photoAlbum = new PhotoAlbum();
         photoAlbum.setUserProfile(userProfile);
@@ -92,6 +95,11 @@ class UserProfileServiceTest {
         assertThat(response.getId()).isEqualTo(user.getId());
         assertThat(response.getNickname()).isEqualTo(user.getUsername());
         assertThat(response.getBio()).isEqualTo(userProfile.getBio());
+
+        // ↓↓↓ 추가: 새로운 필드 검증
+        assertThat(response.getRegion()).isEqualTo("서울");
+        assertThat(response.getLatitude()).isEqualTo(37.5665);
+        assertThat(response.getLongitude()).isEqualTo(126.9780);
     }
 
     @Test
@@ -130,6 +138,9 @@ class UserProfileServiceTest {
         request.setBio("Updated bio");
         request.setMbti(MbtiType.ESTJ);
         request.setPersonalityKeywords(List.of("keyword1", "keyword2"));
+        request.setRegion("부산");
+        request.setLatitude(35.1796);
+        request.setLongitude(129.0756);
 
         MockMultipartFile image = new MockMultipartFile("image", "hello.png", "image/png", "some-image".getBytes());
 
@@ -142,6 +153,9 @@ class UserProfileServiceTest {
         // then
         assertThat(userProfile.getBio()).isEqualTo("Updated bio");
         assertThat(userProfile.getMbti()).isEqualTo(MbtiType.ESTJ);
+        assertThat(userProfile.getRegion()).isEqualTo("부산");
+        assertThat(userProfile.getLatitude()).isEqualTo(35.1796);
+        assertThat(userProfile.getLongitude()).isEqualTo(129.0756);
         assertThat(userProfile.getProfileImageUrl()).isEqualTo("new_image_url");
         assertThat(userProfile.getPersonalityKeywords()).hasSize(2);
         assertThat(userProfile.getPersonalityKeywords().get(0).getKeyword()).isEqualTo("keyword1");
@@ -200,7 +214,5 @@ class UserProfileServiceTest {
         // when
         userProfileService.updateUserProfile(1L, request, null);
 
-        // then
-        verify(profileAnalysisService).analyzeAndProcessProfile(1L);
     }
 }

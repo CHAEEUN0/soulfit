@@ -42,6 +42,9 @@ public class ProfileInitializer implements CommandLineRunner {
                 "https://example.com/admin_profile.jpg", // 예시 프로필 이미지 URL
                 "Soulfit 관리자입니다. 시스템 운영 및 사용자 지원을 담당합니다."
             );
+            adminProfile.setRegion("서울 강남구");
+            adminProfile.setLatitude(37.4979);
+            adminProfile.setLongitude(127.0276);
             userProfileRepository.save(adminProfile);
 
             // regularUser의 프로필 생성 (nickname 필드 없이 현재 UserProfile 엔티티에 맞춰서)
@@ -53,6 +56,9 @@ public class ProfileInitializer implements CommandLineRunner {
                 "https://example.com/user_profile.jpg", // 예시 프로필 이미지 URL
                 "운동을 사랑하는 일반 사용자입니다. 새로운 운동 친구를 찾고 있어요!"
             );
+            userProfile.setRegion("서울 마포구");
+            userProfile.setLatitude(37.56629);
+            userProfile.setLongitude(126.9014);
             userProfileRepository.save(userProfile);
 
             System.out.println("✅ User profiles created (without nickname field).");
