@@ -2,17 +2,20 @@ package soulfit.soulfit.matching.swipe.controller;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.matching.swipe.dto.MatchResponse;
 import soulfit.soulfit.matching.swipe.dto.SwipeRequest;
+import soulfit.soulfit.matching.swipe.dto.SwipeTargetUserResponse;
 import soulfit.soulfit.matching.swipe.dto.SwipeUserResponse;
 import soulfit.soulfit.matching.swipe.service.SwipeService;
 
 import java.util.List;
-import soulfit.soulfit.matching.swipe.dto.SwipeTargetUserResponse;
 
 @RestController
 @RequestMapping("/api/swipes")
@@ -43,7 +46,7 @@ public class SwipeController {
     }
 
     @GetMapping("/targets")
-    public ResponseEntity<List<SwipeTargetUserResponse>> getPotentialSwipeTargets(
+    public ResponseEntity<Page<SwipeTargetUserResponse>> getPotentialSwipeTargets(
             @AuthenticationPrincipal UserAuth currentUser,
             @RequestParam(required = false) Double currentUserLatitude,
             @RequestParam(required = false) Double currentUserLongitude,
@@ -54,9 +57,10 @@ public class SwipeController {
             @RequestParam(required = false) Integer maxAge,
             @RequestParam(required = false) Double maxDistanceInKm,
             @RequestParam(required = false) String smokingStatus,
-            @RequestParam(required = false) String drinkingStatus
+            @RequestParam(required = false) String drinkingStatus,
+            @PageableDefault(size = 20) Pageable pageable
     ) {
-        List<SwipeTargetUserResponse> targets = swipeService.getPotentialSwipeTargets(
+        Page<SwipeTargetUserResponse> targets = swipeService.getPotentialSwipeTargets(
                 currentUser,
                 currentUserLatitude,
                 currentUserLongitude,
@@ -65,7 +69,8 @@ public class SwipeController {
                 minAge, maxAge,
                 maxDistanceInKm,
                 smokingStatus,
-                drinkingStatus
+                drinkingStatus,
+                pageable
         );
         return ResponseEntity.ok(targets);
     }

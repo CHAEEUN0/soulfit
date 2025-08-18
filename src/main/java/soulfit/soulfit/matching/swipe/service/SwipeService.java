@@ -1,6 +1,8 @@
 package soulfit.soulfit.matching.swipe.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
@@ -103,7 +105,7 @@ public class SwipeService {
     }
 
     @Transactional(readOnly = true)
-    public List<SwipeTargetUserResponse> getPotentialSwipeTargets(
+    public Page<SwipeTargetUserResponse> getPotentialSwipeTargets(
             UserAuth currentUser,
             Double currentUserLatitude,
             Double currentUserLongitude,
@@ -112,81 +114,41 @@ public class SwipeService {
             Integer minAge, Integer maxAge,
             Double maxDistanceInKm,
             String smokingStatusFilter,
-            String drinkingStatusFilter
+            String drinkingStatusFilter,
+            Pageable pageable
     ) {
-        List<UserAuth> allUsers = userRepository.findAll();
         Set<Long> swipedUserIds = swipeRepository.findBySwiper(currentUser).stream()
                 .map(swipe -> swipe.getSwiped().getId())
                 .collect(Collectors.toSet());
 
-        List<SwipeTargetUserResponse> potentialTargets = new ArrayList<>();
+        Page<UserAuth> userAuthPage = userRepository.findPotentialSwipeTargets(
+                currentUser,
+                swipedUserIds,
+                currentUserLatitude,
+                currentUserLongitude,
+                regionFilter,
+                minHeight, maxHeight,
+                minAge, maxAge,
+                maxDistanceInKm,
+                smokingStatusFilter,
+                drinkingStatusFilter,
+                pageable
+        );
 
-        for (UserAuth targetUserAuth : allUsers) {
-            if (targetUserAuth.getId().equals(currentUser.getId()) || swipedUserIds.contains(targetUserAuth.getId())) {
-                continue;
-            }
+        return userAuthPage.map(userAuth -> {
+            UserProfile userProfile = userAuth.getUserProfile();
+            MatchingProfile matchingProfile = userAuth.getMatchingProfile();
 
-            Optional<UserProfile> targetUserProfileOpt = userProfileRepository.findByUserAuthId(targetUserAuth.getId());
-            Optional<MatchingProfile> targetMatchingProfileOpt = matchingProfileRepository.findByUserAuthId(targetUserAuth.getId());
-
-            if (targetUserProfileOpt.isEmpty() || targetMatchingProfileOpt.isEmpty()) {
-                continue;
-            }
-            UserProfile targetUserProfile = targetUserProfileOpt.get();
-            MatchingProfile targetMatchingProfile = targetMatchingProfileOpt.get();
-
-            // Age Calculation and Filtering
-            int age = calculateAge(targetUserProfile.getBirthDate());
-            if ((minAge != null && age < minAge) || (maxAge != null && age > maxAge)) {
-                continue;
-            }
-
-            // Distance Calculation and Filtering
             double distance = -1;
             if (currentUserLatitude != null && currentUserLongitude != null &&
-                    targetUserProfile.getLatitude() != null && targetUserProfile.getLongitude() != null) {
+                    userProfile != null && userProfile.getLatitude() != null && userProfile.getLongitude() != null) {
                 distance = LocationUtil.calculateDistance(
                         currentUserLatitude, currentUserLongitude,
-                        targetUserProfile.getLatitude(), targetUserProfile.getLongitude()
+                        userProfile.getLatitude(), userProfile.getLongitude()
                 );
-                if (maxDistanceInKm != null && distance > maxDistanceInKm) {
-                    continue;
-                }
-            } else if (maxDistanceInKm != null) {
-                continue;
             }
-
-            // Height Filtering
-            if (targetMatchingProfile.getHeightCm() != null) {
-                if ((minHeight != null && targetMatchingProfile.getHeightCm() < minHeight) ||
-                        (maxHeight != null && targetMatchingProfile.getHeightCm() > maxHeight)) {
-                    continue;
-                }
-            } else if (minHeight != null || maxHeight != null) {
-                continue;
-            }
-
-            // Region Filtering
-            if (regionFilter != null && !regionFilter.isEmpty() &&
-                    (targetUserProfile.getRegion() == null || !targetUserProfile.getRegion().equalsIgnoreCase(regionFilter))) {
-                continue;
-            }
-
-            // Smoking Status Filtering
-            if (smokingStatusFilter != null && !smokingStatusFilter.isEmpty() &&
-                    (targetMatchingProfile.getSmoking() == null || !targetMatchingProfile.getSmoking().name().equalsIgnoreCase(smokingStatusFilter))) {
-                continue;
-            }
-
-            // Drinking Status Filtering
-            if (drinkingStatusFilter != null && !drinkingStatusFilter.isEmpty() &&
-                    (targetMatchingProfile.getDrinking() == null || !targetMatchingProfile.getDrinking().name().equalsIgnoreCase(drinkingStatusFilter))) {
-                continue;
-            }
-
-            potentialTargets.add(SwipeTargetUserResponse.from(targetUserAuth, targetUserProfile, targetMatchingProfile, distance));
-        }
-        return potentialTargets;
+            return SwipeTargetUserResponse.from(userAuth, userProfile, matchingProfile, distance);
+        });
     }
 
     private int calculateAge(LocalDate birthDate) {
