@@ -40,6 +40,10 @@ public class UserProfile {
     @Column(length = 1000)
     private String bio;
 
+    private String region;
+    private Double latitude;
+    private Double longitude;
+
     @OneToMany(mappedBy = "userProfile", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PersonalityKeyword> personalityKeywords = new ArrayList<>();
 
