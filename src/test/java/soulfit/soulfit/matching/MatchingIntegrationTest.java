@@ -1,0 +1,416 @@
+package soulfit.soulfit.matching;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.transaction.annotation.Transactional;
+import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.authentication.repository.UserRepository;
+import soulfit.soulfit.common.ImageUploadService;
+import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
+import soulfit.soulfit.matching.conversation.domain.RequestStatus;
+import soulfit.soulfit.matching.conversation.dto.ConversationRequestDto;
+import soulfit.soulfit.matching.conversation.dto.ConversationResponseDto;
+import soulfit.soulfit.matching.conversation.dto.UpdateRequestStatusDto;
+import soulfit.soulfit.matching.conversation.repository.ConversationRequestRepository;
+import soulfit.soulfit.matching.conversation.service.ConversationService;
+import soulfit.soulfit.matching.profile.domain.*;
+import soulfit.soulfit.matching.profile.dto.MatchingProfileRequestDto;
+import soulfit.soulfit.matching.profile.dto.MatchingProfileResponseDto;
+import soulfit.soulfit.matching.profile.repository.IdealTypeKeywordRepository;
+import soulfit.soulfit.matching.profile.repository.MatchingProfileRepository;
+import soulfit.soulfit.matching.profile.service.MatchingProfileService;
+import soulfit.soulfit.matching.review.domain.ReviewKeyword;
+import soulfit.soulfit.matching.review.dto.ReviewRequestDto;
+import soulfit.soulfit.matching.review.dto.ReviewResponseDto;
+import soulfit.soulfit.matching.review.repository.ReviewKeywordRepository;
+import soulfit.soulfit.matching.review.repository.ReviewRepository;
+import soulfit.soulfit.matching.review.service.ReviewService;
+import soulfit.soulfit.matching.swipe.domain.Match;
+import soulfit.soulfit.matching.swipe.domain.SwipeType;
+import soulfit.soulfit.matching.swipe.dto.MatchResponse;
+import soulfit.soulfit.matching.swipe.dto.SwipeRequest;
+import soulfit.soulfit.matching.swipe.repository.MatchRepository;
+import soulfit.soulfit.matching.swipe.repository.SwipeRepository;
+import soulfit.soulfit.matching.swipe.service.SwipeService;
+import soulfit.soulfit.matching.voting.dto.VoteFormCreateRequest;
+import soulfit.soulfit.matching.voting.dto.VoteFormResponse;
+import soulfit.soulfit.matching.voting.dto.VoteRequest;
+import soulfit.soulfit.matching.voting.dto.VoteResultResponse;
+import soulfit.soulfit.matching.voting.repository.VoteFormRepository;
+import soulfit.soulfit.matching.voting.service.VoteService;
+import soulfit.soulfit.notification.service.NotificationService;
+import soulfit.soulfit.profile.domain.Gender;
+import soulfit.soulfit.profile.domain.UserProfile;
+import soulfit.soulfit.profile.repository.UserProfileRepository;
+
+import java.io.IOException;
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.*;
+
+@SpringBootTest
+@Transactional
+@ActiveProfiles("test")
+public class MatchingIntegrationTest {
+
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private UserProfileRepository userProfileRepository;
+    @Autowired
+    private MatchingProfileRepository matchingProfileRepository;
+    @Autowired
+    private IdealTypeKeywordRepository idealTypeKeywordRepository;
+    @Autowired
+    private SwipeRepository swipeRepository;
+    @Autowired
+    private MatchRepository matchRepository;
+    @Autowired
+    private ConversationRequestRepository conversationRequestRepository;
+    @Autowired
+    private VoteFormRepository voteFormRepository;
+    @Autowired
+    private ReviewRepository reviewRepository;
+    @Autowired
+    private ReviewKeywordRepository reviewKeywordRepository;
+
+    @Autowired
+    private MatchingProfileService matchingProfileService;
+    @Autowired
+    private SwipeService swipeService;
+    @Autowired
+    private ConversationService conversationService;
+    @Autowired
+    private VoteService voteService;
+    @Autowired
+    private ReviewService reviewService;
+
+    @MockitoBean
+    private NotificationService notificationService;
+    @MockitoBean
+    private ImageUploadService imageUploadService;
+
+    private UserAuth userA;
+    private UserAuth userB;
+    private UserAuth userC; // For voting scenario
+
+    @BeforeEach
+    void setUp() throws IOException {
+        // Clear repositories to ensure a clean state for each test
+        matchRepository.deleteAll();
+        swipeRepository.deleteAll();
+        conversationRequestRepository.deleteAll();
+        voteFormRepository.deleteAll();
+        reviewRepository.deleteAll();
+        reviewKeywordRepository.deleteAll();
+        idealTypeKeywordRepository.deleteAll();
+        matchingProfileRepository.deleteAll();
+        userProfileRepository.deleteAll();
+        userRepository.deleteAll();
+
+        // Setup UserAuth
+        userA = userRepository.save(new UserAuth("userA", "password", "userA@example.com"));
+        userB = userRepository.save(new UserAuth("userB", "password", "userB@example.com"));
+        userC = userRepository.save(new UserAuth("userC", "password", "userC@example.com"));
+
+        // Setup UserProfile for userA and userB
+        UserProfile profileA = new UserProfile(userA, LocalDate.of(1990, 1, 1), Gender.FEMALE);
+        profileA.setProfileImageUrl("http://example.com/profileA.jpg");
+        userA.setUserProfile(profileA);
+        userProfileRepository.save(profileA);
+
+        UserProfile profileB = new UserProfile(userB, LocalDate.of(1992, 5, 5), Gender.MALE);
+        profileB.setProfileImageUrl("http://example.com/profileB.jpg");
+        userB.setUserProfile(profileB);
+        userProfileRepository.save(profileB);
+
+        // Setup initial MatchingProfile for userA and userB (will be updated in tests)
+        matchingProfileRepository.save(MatchingProfile.builder().userAuth(userA).build());
+        matchingProfileRepository.save(MatchingProfile.builder().userAuth(userB).build());
+
+        // Setup ReviewKeywords
+        reviewKeywordRepository.save(ReviewKeyword.builder().keyword("친절해요").build());
+        reviewKeywordRepository.save(ReviewKeyword.builder().keyword("응답이 빨라요").build());
+
+        // Mock ImageUploadService for voting scenario
+        when(imageUploadService.uploadImage(any(), any())).thenReturn("http://example.com/uploaded_image.jpg");
+    }
+
+    @Test
+    @DisplayName("시나리오 1: 프로필 업데이트 -> 스와이프 -> 상호 좋아요 -> 매치 생성 -> 대화 요청 및 수락")
+    void scenario1_profileUpdate_swipe_mutualLike_match_conversation() {
+        // 1. profile - UserA 매칭 프로필 업데이트
+        Set<String> userAIdealTypes = new HashSet<>(Arrays.asList("운동", "여행"));
+        MatchingProfileRequestDto userAProfileDto = new MatchingProfileRequestDto(
+                "UserA bio", "Engineer", 165, 55, Religion.NONE,
+                SmokingHabit.NON_SMOKER, DrinkingHabit.SOMETIMES, Visibility.PUBLIC, userAIdealTypes
+        );
+        MatchingProfileResponseDto updatedAProfile = matchingProfileService.updateMyProfile(userA, userAProfileDto);
+        assertThat(updatedAProfile.bio()).isEqualTo("UserA bio");
+        assertThat(updatedAProfile.idealTypes()).containsExactlyInAnyOrder("운동", "여행");
+
+        // 2. profile - UserB 매칭 프로필 업데이트
+        Set<String> userBIdealTypes = new HashSet<>(Arrays.asList("독서", "음악"));
+        MatchingProfileRequestDto userBProfileDto = new MatchingProfileRequestDto(
+                "UserB bio", "Designer", 180, 70, Religion.CHRISTIANITY,
+                SmokingHabit.OCCASIONAL, DrinkingHabit.DAILY, Visibility.PUBLIC, userBIdealTypes
+        );
+        MatchingProfileResponseDto updatedBProfile = matchingProfileService.updateMyProfile(userB, userBProfileDto);
+        assertThat(updatedBProfile.job()).isEqualTo("Designer");
+        assertThat(updatedBProfile.idealTypes()).containsExactlyInAnyOrder("독서", "음악");
+
+        // 3. swipe - UserA가 UserB를 LIKE
+        SwipeRequest swipeAtoB = new SwipeRequest(userB.getId(), SwipeType.LIKE);
+        MatchResponse matchResponse1 = swipeService.performSwipe(userA, swipeAtoB);
+        assertThat(matchResponse1.isMatch()).isFalse();
+        assertThat(swipeRepository.findBySwiperAndSwipedAndType(userA, userB, SwipeType.LIKE)).isPresent();
+        assertThat(matchRepository.count()).isZero();
+
+        // 4. swipe - UserB가 UserA를 LIKE
+        SwipeRequest swipeBtoA = new SwipeRequest(userA.getId(), SwipeType.LIKE);
+        MatchResponse matchResponse2 = swipeService.performSwipe(userB, swipeBtoA);
+        assertThat(matchResponse2.isMatch()).isTrue();
+        assertThat(swipeRepository.findBySwiperAndSwipedAndType(userB, userA, SwipeType.LIKE)).isPresent();
+        assertThat(matchRepository.count()).isEqualTo(1);
+        Match createdMatch = matchRepository.findAll().get(0);
+        assertThat(Set.of(createdMatch.getUser1().getId(), createdMatch.getUser2().getId()))
+                .containsExactlyInAnyOrder(userA.getId(), userB.getId());
+
+        // 5. conversation - UserA가 UserB에게 대화 신청
+        ConversationRequestDto convRequestDto = new ConversationRequestDto(userB.getId(), "안녕하세요, 매치되어서 기뻐요!");
+        ConversationResponseDto createdConvRequest = conversationService.createConversationRequest(userA, convRequestDto);
+        assertThat(createdConvRequest.status()).isEqualTo(RequestStatus.PENDING);
+        verify(notificationService, times(1)).sendNotification(any(), any(), any(), any(), any(), anyLong());
+
+        // 6. conversation - UserB가 대화 신청 수락
+        UpdateRequestStatusDto updateStatusDto = new UpdateRequestStatusDto("ACCEPTED");
+        ConversationResponseDto acceptedConvRequest = conversationService.updateRequestStatus(createdConvRequest.id(), userB, updateStatusDto);
+        assertThat(acceptedConvRequest.status()).isEqualTo(RequestStatus.ACCEPTED);
+        verify(notificationService, times(2)).sendNotification(any(), any(), any(), any(), any(), anyLong()); // 1 for initial, 1 for accept
+
+        // 7. conversation - UserA가 보낸 대화 신청 목록 조회
+        List<ConversationResponseDto> sentRequests = conversationService.getSentRequests(userA, RequestStatus.ACCEPTED);
+        assertThat(sentRequests).hasSize(1);
+        assertThat(sentRequests.get(0).id()).isEqualTo(acceptedConvRequest.id());
+        assertThat(sentRequests.get(0).status()).isEqualTo(RequestStatus.ACCEPTED);
+
+        // 8. conversation - UserB가 받은 대화 신청 목록 조회
+        List<ConversationResponseDto> receivedRequests = conversationService.getReceivedRequests(userB, RequestStatus.ACCEPTED);
+        assertThat(receivedRequests).hasSize(1);
+        assertThat(receivedRequests.get(0).id()).isEqualTo(acceptedConvRequest.id());
+        assertThat(receivedRequests.get(0).status()).isEqualTo(RequestStatus.ACCEPTED);
+    }
+
+    @Test
+    @DisplayName("시나리오 2: 프로필 업데이트 -> 스와이프 -> 매치 없음 -> 대화 요청 (거부)")
+    void scenario2_profileUpdate_swipe_noMatch_conversationRejected() {
+        // 1. profile - UserA 매칭 프로필 업데이트 (간략화)
+        matchingProfileService.updateMyProfile(userA, new MatchingProfileRequestDto(
+                "UserA bio", "Engineer", 165, 55, Religion.NONE,
+                SmokingHabit.NON_SMOKER, DrinkingHabit.SOMETIMES, Visibility.PUBLIC, new HashSet<>()
+        ));
+
+        // 2. profile - UserB 매칭 프로필 업데이트 (간략화)
+        matchingProfileService.updateMyProfile(userB, new MatchingProfileRequestDto(
+                "UserB bio", "Designer", 180, 70, Religion.CHRISTIANITY,
+                SmokingHabit.OCCASIONAL, DrinkingHabit.DAILY, Visibility.PUBLIC, new HashSet<>()
+        ));
+
+        // 3. swipe - UserA가 UserB를 LIKE
+        swipeService.performSwipe(userA, new SwipeRequest(userB.getId(), SwipeType.LIKE));
+
+        // 4. swipe - UserB가 UserA를 DISLIKE
+        SwipeRequest swipeBtoA_dislike = new SwipeRequest(userA.getId(), SwipeType.DISLIKE);
+        MatchResponse matchResponse = swipeService.performSwipe(userB, swipeBtoA_dislike);
+        assertThat(matchResponse.isMatch()).isFalse();
+        assertThat(matchRepository.count()).isZero(); // 매치 생성 안됨
+
+        // 5. conversation - UserA가 UserB에게 대화 신청 (매치 없어도 가능)
+        ConversationRequestDto convRequestDto = new ConversationRequestDto(userB.getId(), "안녕하세요!");
+        ConversationResponseDto createdConvRequest = conversationService.createConversationRequest(userA, convRequestDto);
+        assertThat(createdConvRequest.status()).isEqualTo(RequestStatus.PENDING);
+        verify(notificationService, times(1)).sendNotification(any(), any(), any(), any(), any(), anyLong());
+
+        // 6. conversation - UserB가 대화 신청 거절
+        UpdateRequestStatusDto updateStatusDto = new UpdateRequestStatusDto("REJECTED");
+        ConversationResponseDto rejectedConvRequest = conversationService.updateRequestStatus(createdConvRequest.id(), userB, updateStatusDto);
+        assertThat(rejectedConvRequest.status()).isEqualTo(RequestStatus.REJECTED);
+        // NotificationService 호출 검증 (거절 알림이 있다면 추가)
+    }
+
+    @Test
+    @DisplayName("시나리오 3: 투표 양식 생성 및 투표 결과 확인")
+    void scenario3_createVoteForm_vote_viewResults() throws IOException {
+        // 1. voting - UserA가 투표 양식 생성 (이미지 포함)
+        String testImageUrl = "http://example.com/uploaded_image.jpg";
+        VoteFormCreateRequest createRequest = new VoteFormCreateRequest(
+                "이 프로필 사진 어떤가요?",
+                "사진에 대한 투표입니다.",
+                Arrays.asList("좋아요", "별로예요"),
+                "IMAGE",
+                testImageUrl
+        );
+        Long voteFormId = voteService.createVoteForm(userA, createRequest);
+        assertThat(voteFormId).isNotNull();
+        
+        
+
+        // 2. voting - UserB가 투표 양식 조회 및 투표
+        VoteFormResponse voteFormResponse = voteService.getVoteForm(voteFormId);
+        assertThat(voteFormResponse.getTitle()).isEqualTo("이 프로필 사진 어떤가요?");
+        assertThat(voteFormResponse.getImageUrl()).isEqualTo(testImageUrl);
+        assertThat(voteFormResponse.getOptions()).hasSize(2);
+        Long option1Id = voteFormResponse.getOptions().get(0).getId(); // "좋아요" 옵션 ID
+
+        voteService.vote(userB.getId(), new VoteRequest(voteFormId, option1Id));
+
+        // 3. voting - UserC가 투표 양식 조회 및 투표
+        voteService.vote(userC.getId(), new VoteRequest(voteFormId, option1Id));
+
+        // 4. voting - UserA가 투표 결과 조회
+        VoteResultResponse results = voteService.getVoteResults(userA, voteFormId);
+        assertThat(results.getVoteFormId()).isEqualTo(voteFormId);
+        assertThat(results.getResults()).hasSize(2);
+        assertThat(results.getResults().get(0).getLabel()).isEqualTo("좋아요");
+        assertThat(results.getResults().get(0).getVoteCount()).isEqualTo(2);
+        assertThat(results.getResults().get(1).getLabel()).isEqualTo("별로예요");
+        assertThat(results.getResults().get(1).getVoteCount()).isEqualTo(0);
+
+        // 5. voting - UserB가 투표 결과 조회 시도 (권한 없음)
+        assertThatThrownBy(() -> voteService.getVoteResults(userB, voteFormId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("투표 결과를 조회할 권한이 없습니다.");
+    }
+
+    // ================================================================================================================
+    // Review Service Scenarios
+    // ================================================================================================================
+
+    private ReviewRequestDto createReviewDto(Long revieweeId, Long convId, String comment, List<String> keywords) {
+        ReviewRequestDto dto = new ReviewRequestDto();
+        try {
+            // Using reflection to set private fields as DTO has no public setters/constructors
+            var field = ReviewRequestDto.class.getDeclaredField("revieweeId");
+            field.setAccessible(true);
+            field.set(dto, revieweeId);
+
+            field = ReviewRequestDto.class.getDeclaredField("conversationRequestId");
+            field.setAccessible(true);
+            field.set(dto, convId);
+
+            field = ReviewRequestDto.class.getDeclaredField("comment");
+            field.setAccessible(true);
+            field.set(dto, comment);
+
+            field = ReviewRequestDto.class.getDeclaredField("keywords");
+            field.setAccessible(true);
+            field.set(dto, keywords);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException("Failed to create ReviewRequestDto for test", e);
+        }
+        return dto;
+    }
+
+    @Test
+    @DisplayName("시나리오 4: 대화 완료 후 리뷰 작성 및 조회 (정상 흐름)")
+    void scenario4_review_happyPath() {
+        // given: UserA와 UserB가 대화를 수락한 상황
+        ConversationRequest convRequest = conversationRequestRepository.save(
+                ConversationRequest.builder().fromUser(userA).toUser(userB).message("대화해요").build()
+        );
+        convRequest.updateStatus(RequestStatus.ACCEPTED);
+        conversationRequestRepository.save(convRequest);
+
+        // when: UserA가 UserB에 대한 리뷰를 작성
+        ReviewRequestDto reviewDto = createReviewDto(
+                userB.getId(),
+                convRequest.getId(),
+                "매우 즐거운 대화였습니다!",
+                List.of("친절해요", "응답이 빨라요")
+        );
+        ReviewResponseDto createdReview = reviewService.createReview(userA, reviewDto);
+
+        // then: 리뷰가 정상적으로 생성되고 조회되어야 함
+        assertThat(createdReview.getId()).isNotNull();
+        assertThat(createdReview.getComment()).isEqualTo("매우 즐거운 대화였습니다!");
+        assertThat(createdReview.getKeywords()).containsExactlyInAnyOrder("친절해요", "응답이 빨라요");
+
+        // then: UserB가 받은 리뷰 목록에서 확인 가능해야 함
+        List<ReviewResponseDto> reviewsForB = reviewService.getReviewsForUser(userB.getId());
+        assertThat(reviewsForB).hasSize(1);
+        assertThat(reviewsForB.get(0).getId()).isEqualTo(createdReview.getId());
+
+        // then: UserA가 작성한 리뷰 목록에서 확인 가능해야 함
+        List<ReviewResponseDto> reviewsByA = reviewService.getReviewsByMe(userA);
+        assertThat(reviewsByA).hasSize(1);
+        assertThat(reviewsByA.get(0).getId()).isEqualTo(createdReview.getId());
+    }
+
+    @Test
+    @DisplayName("시나리오 5: 중복 리뷰 작성 시 예외 발생")
+    void scenario5_review_duplicateReviewThrowsException() {
+        // given: UserA와 UserB가 대화를 수락하고 UserA가 이미 리뷰를 작성한 상황
+        ConversationRequest convRequest = conversationRequestRepository.save(
+                ConversationRequest.builder().fromUser(userA).toUser(userB).message("대화해요").build()
+        );
+        convRequest.updateStatus(RequestStatus.ACCEPTED);
+        conversationRequestRepository.save(convRequest);
+        reviewService.createReview(userA, createReviewDto(userB.getId(), convRequest.getId(), "첫번째 리뷰", List.of("친절해요")));
+
+        // when & then: 동일한 대화에 대해 다시 리뷰를 작성하려고 하면 예외가 발생해야 함
+        assertThatThrownBy(() -> {
+            reviewService.createReview(userA, createReviewDto(userB.getId(), convRequest.getId(), "두번째 리뷰", List.of("응답이 빨라요")));
+        })
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("이미 해당 대화에 대한 리뷰를 작성했습니다.");
+    }
+
+    @Test
+    @DisplayName("시나리오 6: 대화 미참여자가 리뷰 작성 시 예외 발생")
+    void scenario6_review_nonParticipantThrowsException() {
+        // given: UserA와 UserB가 대화를 수락한 상황
+        ConversationRequest convRequest = conversationRequestRepository.save(
+                ConversationRequest.builder().fromUser(userA).toUser(userB).message("대화해요").build()
+        );
+        convRequest.updateStatus(RequestStatus.ACCEPTED);
+        conversationRequestRepository.save(convRequest);
+
+        // when & then: 대화에 참여하지 않은 UserC가 리뷰를 작성하려고 하면 예외가 발생해야 함
+        assertThatThrownBy(() -> {
+            reviewService.createReview(userC, createReviewDto(userB.getId(), convRequest.getId(), "제3자 리뷰", List.of("친절해요")));
+        })
+        .isInstanceOf(IllegalStateException.class)
+        .hasMessageContaining("대화에 참여한 사용자만 리뷰를 작성할 수 있습니다.");
+    }
+
+    @Test
+    @DisplayName("시나리오 7: 존재하지 않는 키워드로 리뷰 작성 시 예외 발생")
+    void scenario7_review_invalidKeywordThrowsException() {
+        // given: UserA와 UserB가 대화를 수락한 상황
+        ConversationRequest convRequest = conversationRequestRepository.save(
+                ConversationRequest.builder().fromUser(userA).toUser(userB).message("대화해요").build()
+        );
+        convRequest.updateStatus(RequestStatus.ACCEPTED);
+        conversationRequestRepository.save(convRequest);
+
+        // when & then: 존재하지 않는 키워드로 리뷰를 작성하려고 하면 예외가 발생해야 함
+        assertThatThrownBy(() -> {
+            reviewService.createReview(userA, createReviewDto(userB.getId(), convRequest.getId(), "잘못된 키워드", List.of("존재하지않는키워드")));
+        })
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("존재하지 않는 키워드가 포함되어 있습니다.");
+    }
+}

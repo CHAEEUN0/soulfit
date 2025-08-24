@@ -36,18 +36,24 @@ public class ConversationService {
 
     @Transactional
     public ConversationResponseDto createConversationRequest(UserAuth fromUser, ConversationRequestDto requestDto) {
+        log.debug("Attempting to create conversation request from user {} to user {}", fromUser.getId(), requestDto.toUserId());
         if (Objects.equals(fromUser.getId(), requestDto.toUserId())) {
+            log.warn("User {} tried to request a conversation with themselves.", fromUser.getId());
             throw new IllegalArgumentException("자기 자신에게 대화를 신청할 수 없습니다.");
         }
 
         boolean alreadyExists = conversationRequestRepository.existsByFromUserIdAndToUserIdAndStatus(
                 fromUser.getId(), requestDto.toUserId(), RequestStatus.PENDING);
         if (alreadyExists) {
+            log.warn("Duplicate conversation request from user {} to user {}.", fromUser.getId(), requestDto.toUserId());
             throw new IllegalStateException("이미 처리 대기 중인 대화 신청이 존재합니다.");
         }
 
         UserAuth toUser = userRepository.findByIdWithProfile(requestDto.toUserId())
-                .orElseThrow(() -> new EntityNotFoundException("상대방 사용자를 찾을 수 없습니다. ID: " + requestDto.toUserId()));
+                .orElseThrow(() -> {
+                    log.warn("Could not find user with ID: {}", requestDto.toUserId());
+                    return new EntityNotFoundException("상대방 사용자를 찾을 수 없습니다. ID: " + requestDto.toUserId());
+                });
 
         ConversationRequest newRequest = ConversationRequest.builder()
                 .fromUser(fromUser)
@@ -74,14 +80,22 @@ public class ConversationService {
 
     @Transactional
     public ConversationResponseDto updateRequestStatus(Long requestId, UserAuth currentUser, UpdateRequestStatusDto statusDto) {
+        log.debug("User {} attempting to update request {} with status {}", currentUser.getId(), requestId, statusDto.status());
         ConversationRequest request = conversationRequestRepository.findById(requestId)
-                .orElseThrow(() -> new EntityNotFoundException("요청을 찾을 수 없거나 처리할 권한이 없습니다. ID: " + requestId));
+                .orElseThrow(() -> {
+                    log.warn("Conversation request not found for ID: {}. User: {}", requestId, currentUser.getId());
+                    return new EntityNotFoundException("요청을 찾을 수 없거나 처리할 권한이 없습니다. ID: " + requestId);
+                });
 
         if (!request.getToUser().getId().equals(currentUser.getId())) {
+            log.error("User {} attempted to process request {} which belongs to user {}. Access denied.",
+                    currentUser.getId(), requestId, request.getToUser().getId());
             throw new IllegalStateException("요청을 처리할 권한이 없습니다.");
         }
 
         if (request.getStatus() != RequestStatus.PENDING) {
+            log.warn("User {} attempted to process already handled request {}. Current status: {}",
+                    currentUser.getId(), requestId, request.getStatus());
             throw new IllegalStateException("이미 처리된 요청입니다. 현재 상태: " + request.getStatus());
         }
 
@@ -92,7 +106,7 @@ public class ConversationService {
             // TODO: 채팅방 생성 기능 완료 후, 아래 주석을 해제하고 실제 로직을 연동해야 함.
             // ChatRoom newChatRoom = chatService.createChatRoom(request.getFromUser(), request.getToUser());
             // request.setChatRoomId(newChatRoom.getId());
-            log.info("대화 신청 #{}이(가) 수락되었습니다.", requestId);
+            log.info("대화 신청 #{}이(가) 수락되었습니다. By user {}", requestId, currentUser.getId());
             String notificationTitle = "대화 신청 수락";
             String notificationBody = currentUser.getUsername() + "님께서 대화 신청을 수락하셨습니다.";
             notificationService.sendNotification(
@@ -104,21 +118,25 @@ public class ConversationService {
                     request.getId()
             );
         } else {
-            log.info("대화 신청 #{}이(가) 거절되었습니다.", requestId);
+            log.info("대화 신청 #{}이(가) 거절되었습니다. By user {}", requestId, currentUser.getId());
         }
 
         return toConversationResponseDto(request);
     }
 
     public List<ConversationResponseDto> getReceivedRequests(UserAuth user, RequestStatus status) {
+        log.debug("Fetching received conversation requests for user {} with status {}", user.getId(), status);
         List<ConversationRequest> requests = conversationRequestRepository.findByToUserAndStatusWithProfiles(user, status);
+        log.info("Found {} received conversation requests for user {}", requests.size(), user.getId());
         return requests.stream()
                 .map(this::toConversationResponseDto)
                 .collect(Collectors.toList());
     }
 
     public List<ConversationResponseDto> getSentRequests(UserAuth user, RequestStatus status) {
+        log.debug("Fetching sent conversation requests for user {} with status {}", user.getId(), status);
         List<ConversationRequest> requests = conversationRequestRepository.findByFromUserAndStatusWithProfiles(user, status);
+        log.info("Found {} sent conversation requests for user {}", requests.size(), user.getId());
         return requests.stream()
                 .map(this::toConversationResponseDto)
                 .collect(Collectors.toList());

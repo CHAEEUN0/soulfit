@@ -26,6 +26,9 @@ public class UserProfileResponse {
     private String profileImageUrl;
     private String bio;
     private List<String> personalityKeywords;
+    private String region;
+    private Double latitude;
+    private Double longitude;
 
     public static UserProfileResponse from(UserProfile userProfile) {
         return UserProfileResponse.builder()
@@ -39,6 +42,9 @@ public class UserProfileResponse {
                 .personalityKeywords(userProfile.getPersonalityKeywords().stream()
                         .map(PersonalityKeyword::getKeyword)
                         .collect(Collectors.toList()))
+                .region(userProfile.getRegion())
+                .latitude(userProfile.getLatitude())
+                .longitude(userProfile.getLongitude())
                 .build();
     }
 }
