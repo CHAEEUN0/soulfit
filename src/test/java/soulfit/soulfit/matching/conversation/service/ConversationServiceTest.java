@@ -148,10 +148,11 @@ class ConversationServiceTest {
     }
 
     @Test
-    @DisplayName("받은 대화 신청을 성공적으로 수락한다")
+    @DisplayName("받은 대화 신청을 성공적으로 수락하면 채팅방이 생성된다")
     void updateRequestStatus_Accept_Success() {
         // Given
         ConversationResponseDto createdDto = conversationService.createConversationRequest(fromUser, new ConversationRequestDto(toUser.getId(), "수락 테스트"));
+        assertThat(createdDto.chatRoomId()).isNull(); // 생성 시점엔 chatRoomId가 null이어야 함
         reset(notificationService); // createConversationRequest 호출로 인한 호출 초기화
 
         UpdateRequestStatusDto statusDto = new UpdateRequestStatusDto("ACCEPTED");
@@ -163,6 +164,16 @@ class ConversationServiceTest {
         assertThat(updatedDto.status()).isEqualTo(RequestStatus.ACCEPTED);
         assertThat(updatedDto.fromUser().userId()).isEqualTo(fromUser.getId());
         assertThat(updatedDto.toUser().userId()).isEqualTo(toUser.getId());
+
+        // 채팅방 생성 검증
+        assertThat(updatedDto.chatRoomId()).isNotNull();
+
+        em.flush();
+        em.clear();
+
+        ConversationRequest updatedRequest = conversationRequestRepository.findById(createdDto.id()).get();
+        assertThat(updatedRequest.getChatRoomId()).isNotNull();
+        assertThat(updatedDto.chatRoomId()).isEqualTo(updatedRequest.getChatRoomId());
 
         // NotificationService 호출 검증
         verify(notificationService, times(1)).sendNotification(
