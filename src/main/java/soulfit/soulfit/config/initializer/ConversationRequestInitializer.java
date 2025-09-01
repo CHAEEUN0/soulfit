@@ -33,6 +33,9 @@ public class ConversationRequestInitializer implements CommandLineRunner {
             UserAuth admin = userRepository.findByUsername("admin").orElseThrow(
                 () -> new RuntimeException("User 'admin' not found. Please run UserInitializer first.")
             );
+            UserAuth user2 = userRepository.findByUsername("user2").orElseThrow(
+                () -> new RuntimeException("User 'user2' not found. Please run UserInitializer first.")
+            );
 
             // 1. 'user'가 'admin'에게 보내는 대화 요청 생성
             ConversationRequest requestFromUser = ConversationRequest.builder()
@@ -50,8 +53,16 @@ public class ConversationRequestInitializer implements CommandLineRunner {
                     .build();
             conversationRequestRepository.save(requestFromAdmin);
 
+            // 3. 'user2'가 'user'에게 보내는 대화 요청 생성
+            ConversationRequest requestFromUser2 = ConversationRequest.builder()
+                    .fromUser(user2)
+                    .toUser(user)
+                    .message("안녕하세요 user님, 프로필 보고 연락드렸습니다.")
+                    .build();
+            conversationRequestRepository.save(requestFromUser2);
 
-            System.out.println("✅ Sample conversation requests created: 'user' -> 'admin' and 'admin' -> 'user'.");
+
+            System.out.println("✅ Sample conversation requests created: 'user' -> 'admin', 'admin' -> 'user', and 'user2' -> 'user'.");
         }
     }
 }

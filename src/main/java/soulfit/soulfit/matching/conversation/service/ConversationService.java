@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
+import soulfit.soulfit.chat.ChatService;
 import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
 import soulfit.soulfit.matching.conversation.domain.RequestStatus;
 import soulfit.soulfit.matching.conversation.dto.ConversationRequestDto;
@@ -33,6 +34,7 @@ public class ConversationService {
     private final ConversationRequestRepository conversationRequestRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final ChatService chatService;
 
     @Transactional
     public ConversationResponseDto createConversationRequest(UserAuth fromUser, ConversationRequestDto requestDto) {
@@ -103,10 +105,9 @@ public class ConversationService {
         request.updateStatus(newStatus);
 
         if (newStatus == RequestStatus.ACCEPTED) {
-            // TODO: 채팅방 생성 기능 완료 후, 아래 주석을 해제하고 실제 로직을 연동해야 함.
-            // ChatRoom newChatRoom = chatService.createChatRoom(request.getFromUser(), request.getToUser());
-            // request.setChatRoomId(newChatRoom.getId());
-            log.info("대화 신청 #{}이(가) 수락되었습니다. By user {}", requestId, currentUser.getId());
+            Long chatRoomId = chatService.getOrCreateChatRoom(request.getFromUser().getId(), currentUser);
+            request.setChatRoomId(chatRoomId);
+            log.info("대화 신청 #{}이(가) 수락되었습니다. By user {}. ChatRoom ID: {}", requestId, currentUser.getId(), chatRoomId);
             String notificationTitle = "대화 신청 수락";
             String notificationBody = currentUser.getUsername() + "님께서 대화 신청을 수락하셨습니다.";
             notificationService.sendNotification(
@@ -152,7 +153,8 @@ public class ConversationService {
                 toUserDto,
                 request.getMessage(),
                 request.getStatus(),
-                request.getCreatedAt()
+                request.getCreatedAt(),
+                request.getChatRoomId()
         );
     }
 

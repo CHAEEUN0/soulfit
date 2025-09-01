@@ -10,7 +10,8 @@ public record ConversationResponseDto(
         ConversationPartnerDto toUser,
         String message,
         RequestStatus status,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        Long chatRoomId
 ) {
     public record ConversationPartnerDto(
             Long userId,
