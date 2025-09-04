@@ -11,13 +11,15 @@ public class AuthResponse {
     private String username;
     private String email;
     private String tokenType = "Bearer";
+    private Long id;
 
     public AuthResponse() {}
 
-    public AuthResponse(String accessToken, String refreshToken, String username, String email) {
+    public AuthResponse(String accessToken, String refreshToken, String username, String email,Long id) {
         this.accessToken = accessToken;
         this.refreshToken = refreshToken;
         this.username = username;
         this.email = email;
+        this.id = id;
     }
 }
