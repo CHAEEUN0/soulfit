@@ -81,7 +81,7 @@ public class AuthService {
 
         logger.info("authenticated as " + authentication.getName());
 
-        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername(), userAuth.getEmail());
+        return new AuthResponse(jwt, refreshToken.getToken(), userAuth.getUsername(), userAuth.getEmail(),userAuth.getId());
     }
 
     public String register(RegisterRequest registerRequest) {
@@ -134,7 +134,8 @@ public class AuthService {
                 .map(username -> {
                     String newAccessToken = jwtUtil.generateToken(username);
                     String email = userRepository.findByUsername(username).get().getEmail();
-                    return new AuthResponse(newAccessToken, refreshTokenStr,username,email);
+                    Long id = userRepository.findByUsername(username).get().getId();
+                    return new AuthResponse(newAccessToken, refreshTokenStr,username,email,id);
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
     }
