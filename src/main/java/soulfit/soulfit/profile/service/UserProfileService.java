@@ -53,14 +53,22 @@ public class UserProfileService {
     // 2. 앨범 사진 목록 조회
     @Transactional(readOnly = true)
     public List<PhotoResponse> getAlbumPhotos(Long userId) {
-        UserProfile userProfile = userProfileRepository.findByUserAuthId(userId)
-                .orElseThrow(() -> new EntityNotFoundException("UserProfile not found for user id: " + userId));
+        logger.info("Entering getAlbumPhotos for userId: {}", userId);
+        try {
+            UserProfile userProfile = userProfileRepository.findByUserAuthId(userId)
+                    .orElseThrow(() -> new EntityNotFoundException("UserProfile not found for user id: " + userId));
 
-        return photoAlbumRepository.findByUserProfile(userProfile)
-                .map(photoAlbum -> photoAlbum.getPhotos().stream()
-                        .map(PhotoResponse::from)
-                        .collect(Collectors.toList()))
-                .orElse(Collections.emptyList());
+            List<PhotoResponse> photos = photoAlbumRepository.findByUserProfile(userProfile)
+                    .map(photoAlbum -> photoAlbum.getPhotos().stream()
+                            .map(PhotoResponse::from)
+                            .collect(Collectors.toList()))
+                    .orElse(Collections.emptyList());
+            logger.info("Exiting getAlbumPhotos for userId: {} with {} photos.", userId, photos.size());
+            return photos;
+        } catch (Exception e) {
+            logger.error("Error in getAlbumPhotos for userId: {}", userId, e);
+            throw e;
+        }
     }
 
     // 3. 프로필 정보 수정

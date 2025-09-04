@@ -13,7 +13,7 @@ import soulfit.soulfit.notification.service.NotificationService;
 
 @Component
 @Profile("!test")
-@Order(5) // 다른 Initializer들(User, Profile 등)이 실행된 후 마지막에 실행되도록 순서를 높게 설정
+@Order(6) // 다른 Initializer들(User, Profile 등)이 실행된 후 마지막에 실행되도록 순서를 높게 설정
 public class NotificationInitializer implements CommandLineRunner {
 
     @Autowired
