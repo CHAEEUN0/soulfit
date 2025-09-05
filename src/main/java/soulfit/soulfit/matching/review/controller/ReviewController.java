@@ -46,4 +46,11 @@ public class ReviewController {
         List<String> keywords = reviewService.getAllKeywords();
         return ResponseEntity.ok(keywords);
     }
+
+    @GetMapping("/user/{userId}/keywords/summary")
+    public ResponseEntity<List<String>> getTopKeywordsForUser(@PathVariable Long userId) {
+        int keywordLimit = 3; // 상위 3개의 키워드를 가져옴
+        List<String> keywords = reviewService.getTopKeywordsForUser(userId, keywordLimit);
+        return ResponseEntity.ok(keywords);
+    }
 }

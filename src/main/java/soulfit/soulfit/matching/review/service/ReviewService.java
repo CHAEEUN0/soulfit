@@ -3,6 +3,8 @@ package soulfit.soulfit.matching.review.service;
 
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
@@ -17,6 +19,9 @@ import soulfit.soulfit.matching.review.dto.ReviewResponseDto;
 import soulfit.soulfit.matching.review.repository.ReviewKeywordRepository;
 import soulfit.soulfit.matching.review.repository.ReviewRepository;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -26,6 +31,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReviewService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ReviewService.class);
 
     private final ReviewRepository reviewRepository;
     private final ReviewKeywordRepository reviewKeywordRepository;
@@ -102,5 +109,21 @@ public class ReviewService {
         return reviewKeywordRepository.findAll().stream()
                 .map(ReviewKeyword::getKeyword)
                 .collect(Collectors.toList());
+    }
+
+    public List<String> getTopKeywordsForUser(Long userId, int limit) {
+        logger.info("Entering getTopKeywordsForUser for userId: {}", userId);
+        try {
+            if (!userRepository.existsById(userId)) {
+                throw new EntityNotFoundException("사용자를 찾을 수 없습니다.");
+            }
+            Pageable pageable = PageRequest.of(0, limit);
+            List<String> keywords = reviewRepository.findTopKeywordsByRevieweeId(userId, pageable);
+            logger.info("Exiting getTopKeywordsForUser for userId: {} with {} keywords.", userId, keywords.size());
+            return keywords;
+        } catch (Exception e) {
+            logger.error("Error in getTopKeywordsForUser for userId: {}", userId, e);
+            throw e;
+        }
     }
 }

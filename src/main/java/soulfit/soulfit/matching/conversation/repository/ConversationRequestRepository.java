@@ -52,4 +52,6 @@ public interface ConversationRequestRepository extends JpaRepository<Conversatio
      * @return Optional<ConversationRequest>
      */
     Optional<ConversationRequest> findByIdAndToUserId(Long id, Long toUserId);
+
+    Optional<ConversationRequest> findByFromUserAndToUser(UserAuth fromUser, UserAuth toUser);
 }

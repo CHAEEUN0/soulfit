@@ -21,6 +21,9 @@ import soulfit.soulfit.matching.review.dto.ReviewResponseDto;
 import soulfit.soulfit.matching.review.repository.ReviewKeywordRepository;
 import soulfit.soulfit.matching.review.repository.ReviewRepository;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -177,5 +180,42 @@ class ReviewServiceTest {
             reviewService.createReview(reviewer, requestDto);
         });
         assertThat(exception.getMessage()).isEqualTo("이미 해당 대화에 대한 리뷰를 작성했습니다.");
+    }
+
+    @Test
+    @DisplayName("상위 리뷰 키워드 조회 성공")
+    void getTopKeywordsForUser_Success() {
+        // given
+        Long userId = 2L;
+        int limit = 3;
+        List<String> topKeywords = List.of("Funny", "Polite", "Kind");
+        when(userRepository.existsById(userId)).thenReturn(true);
+        when(reviewRepository.findTopKeywordsByRevieweeId(anyLong(), any(Pageable.class)))
+                .thenReturn(topKeywords);
+
+        // when
+        List<String> result = reviewService.getTopKeywordsForUser(userId, limit);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.size()).isEqualTo(3);
+        assertThat(result).containsExactly("Funny", "Polite", "Kind");
+        verify(userRepository).existsById(userId);
+        verify(reviewRepository).findTopKeywordsByRevieweeId(userId, PageRequest.of(0, limit));
+    }
+
+    @Test
+    @DisplayName("상위 리뷰 키워드 조회 실패 - 사용자를 찾을 수 없음")
+    void getTopKeywordsForUser_Fail_UserNotFound() {
+        // given
+        Long nonExistentUserId = 99L;
+        int limit = 3;
+        when(userRepository.existsById(nonExistentUserId)).thenReturn(false);
+
+        // when & then
+        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
+            reviewService.getTopKeywordsForUser(nonExistentUserId, limit);
+        });
+        assertThat(exception.getMessage()).isEqualTo("사용자를 찾을 수 없습니다.");
     }
 }
