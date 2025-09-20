@@ -221,7 +221,7 @@ public class MeetingService {
 
     @Transactional(readOnly = true)
     public Page<Meeting> getParticipatedMeetings(UserAuth user, Pageable pageable) {
-        Pageable sortedPageable  = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "meetingTime"));
+        Pageable sortedPageable  = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "meeting.meetingTime"));
         return meetingParticipantRepository.findMeetingUserParticipated(user, sortedPageable);
     }
 }
