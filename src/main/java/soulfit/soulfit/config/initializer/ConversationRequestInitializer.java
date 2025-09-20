@@ -61,8 +61,16 @@ public class ConversationRequestInitializer implements CommandLineRunner {
                     .build();
             conversationRequestRepository.save(requestFromUser2);
 
+            // 4. 'user2'가 'admin'에게 보내는 대화 요청 생성
+            ConversationRequest requestFromUser2ToAdmin = ConversationRequest.builder()
+                    .fromUser(user2)
+                    .toUser(admin)
+                    .message("관리자님, 안녕하세요. 문의사항이 있어 연락드립니다.")
+                    .build();
+            conversationRequestRepository.save(requestFromUser2ToAdmin);
 
-            System.out.println("✅ Sample conversation requests created: 'user' -> 'admin', 'admin' -> 'user', and 'user2' -> 'user'.");
+
+            System.out.println("✅ Sample conversation requests created: 'user' -> 'admin', 'admin' -> 'user', 'user2' -> 'user', and 'user2' -> 'admin'.");
         }
     }
 }
