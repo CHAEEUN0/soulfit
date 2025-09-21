@@ -100,6 +100,20 @@ public class MeetingService {
         }
     }
 
+    public List<MeetingResponseDto> getPopularMeetings(Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "bookmarkCount"));
+        return getAllMeetings(sortedPageable).stream()
+                .map(MeetingResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
+    public List<MeetingResponseDto> getRecentMeetings(Pageable pageable) {
+        Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createAt"));
+        return getAllMeetings(sortedPageable).stream()
+                .map(MeetingResponseDto::from)
+                .collect(Collectors.toList());
+    }
+
     // ... (기존 메서드들)
 
     public Page<Meeting> getAllMeetings(Pageable pageable){
