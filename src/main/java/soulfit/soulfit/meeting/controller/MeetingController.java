@@ -45,6 +45,18 @@ public class MeetingController {
         return ResponseEntity.ok(result);
     }
 
+    @GetMapping("meetings/popular")
+    public ResponseEntity<List<MeetingResponseDto>> getPopularMeetings(Pageable pageable) {
+        List<MeetingResponseDto> result = meetingService.getPopularMeetings(pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("meetings/recent")
+    public ResponseEntity<List<MeetingResponseDto>> getRecentMeetings(Pageable pageable) {
+        List<MeetingResponseDto> result = meetingService.getRecentMeetings(pageable);
+        return ResponseEntity.ok(result);
+    }
+
 
 
     //최근 참여모임
