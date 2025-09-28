@@ -123,22 +123,10 @@ public class TestService {
                 // 질문에 해당하는 모든 선택지 조회 (DB의 PK 순서대로 정렬된다고 가정)
                 List<Choice> choices = choiceRepository.findByQuestionId(q.getId());
 
-                // choiceId를 1부터 시작하는 상대적인 값으로 변환
-                final AtomicLong counter = new AtomicLong(1);
+                // DB에 저장된 실제 id를 사용하도록 수정
                 choiceDtos = choices.stream()
-                        .map(c -> new ChoiceResponse(counter.getAndIncrement(), c.getText()))
+                        .map(c -> new ChoiceResponse(c.getId(), c.getText()))
                         .collect(Collectors.toList());
-
-                // 사용자가 선택한 choice의 상대적인 ID를 찾음
-//                if (answer.getSelectedChoice() != null) {
-//                    long dbSelectedId = answer.getSelectedChoice().getId();
-//                    for (int i = 0; i < choices.size(); i++) {
-//                        if (choices.get(i).getId().equals(dbSelectedId)) {
-//                            selectedChoiceId = (long) i + 1;
-//                            break;
-//                        }
-//                    }
-//                }
 
                 selectedChoiceId = answer.getSelectedChoice().getId();
             }
