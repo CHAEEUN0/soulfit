@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
+import soulfit.soulfit.chat.ai.AIAnalysisService;
 import soulfit.soulfit.common.S3Uploader;
 import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.domain.MeetingImage;
@@ -31,6 +32,7 @@ public class ChatService {
     private final MeetingParticipantRepository meetingParticipantRepository;
     private final UserRepository userRepository;
     private final S3Uploader s3Uploader;
+    private final AIAnalysisService aiAnalysisService;
 
 
     @Transactional(readOnly = true)
@@ -166,6 +168,7 @@ public class ChatService {
         chatMessage.setSeq(next);
         chatRoom.addMessage(chatMessage);
 
+        aiAnalysisService.analyzeConversationAndBroadcast(dto.getRoomId());
 
         return chatMessageRepository.save(chatMessage);
     }
