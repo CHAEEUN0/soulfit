@@ -1,15 +1,11 @@
 package soulfit.soulfit.meeting.client;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import soulfit.soulfit.meeting.dto.ai.AiAnalyzeParticipantRequest;
-import soulfit.soulfit.meeting.dto.ai.AiAnalyzeParticipantResponse;
-import soulfit.soulfit.meeting.dto.ai.AiRequestDto;
-import soulfit.soulfit.meeting.dto.ai.AiResponseDto;
+import soulfit.soulfit.meeting.dto.ai.*;
 
 @Component
 public class AiMeetingClient {
@@ -33,5 +29,10 @@ public class AiMeetingClient {
         return restTemplate.postForObject(aiServerUrl + "/analyze-participants", requestDto, AiAnalyzeParticipantResponse.class);
     }
 
-
+    public AiReviewResponseDto analyzeMeetingReview(AiReviewRequestDto requestDto) {
+        return restTemplate.postForObject(
+                aiServerUrl + "/meeting/analyze-reviews",
+                requestDto,
+                AiReviewResponseDto.class);
+    }
 }
