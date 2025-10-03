@@ -1,6 +1,8 @@
 package soulfit.soulfit.matching.voting.service;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
@@ -29,21 +31,39 @@ public class VoteService {
     private final UserProfileRepository userProfileRepository;
 
     @Transactional(readOnly = true)
-    public VoteFormResponse getVoteForm(Long voteFormId) {
-        VoteForm voteForm = voteFormRepository.findByIdAndActiveTrue(voteFormId)
-                .orElseThrow(() -> new IllegalArgumentException("투표 폼을 찾을 수 없습니다."));
+    public Page<VoteFormResponse> getAllVoteForms(Pageable pageable) {
+        Page<VoteForm> voteForms = voteFormRepository.findAllByActiveTrueOrderByCreatedAtDesc(pageable);
+        return voteForms.map(this::convertToVoteFormResponse); // 엔티티를 DTO로 변환
+    }
 
+    private VoteFormResponse convertToVoteFormResponse(VoteForm voteForm) {
         List<VoteOptionResponse> optionResponses = voteOptionRepository
-                .findByVoteFormIdOrderBySortOrderAsc(voteFormId)
+                .findByVoteFormIdOrderBySortOrderAsc(voteForm.getId())
                 .stream()
                 .map(option -> new VoteOptionResponse(option.getId(), option.getLabel(), option.getEmoji()))
                 .toList();
 
         String creatorProfileImageUrl = userProfileRepository.findByUserAuthId(voteForm.getCreator().getId())
                 .map(userProfile -> userProfile.getProfileImageUrl())
-                .orElse(null); // 프로필 이미지가 없을 경우 null
+                .orElse(null);
 
-        return new VoteFormResponse(voteForm.getId(), voteForm.getTitle(), voteForm.getCreator().getId(), voteForm.getCreator().getUsername(), creatorProfileImageUrl, voteForm.getTargetType().name(), voteForm.getImageUrl(), optionResponses);
+        return new VoteFormResponse(
+                voteForm.getId(),
+                voteForm.getTitle(),
+                voteForm.getCreator().getId(),
+                voteForm.getCreator().getUsername(),
+                creatorProfileImageUrl,
+                voteForm.getTargetType().name(),
+                voteForm.getImageUrl(),
+                optionResponses
+        );
+    }
+
+    @Transactional(readOnly = true)
+    public VoteFormResponse getVoteForm(Long voteFormId) {
+        VoteForm voteForm = voteFormRepository.findByIdAndActiveTrue(voteFormId)
+                .orElseThrow(() -> new IllegalArgumentException("투표 폼을 찾을 수 없습니다."));
+        return convertToVoteFormResponse(voteForm);
     }
 
     @Transactional
