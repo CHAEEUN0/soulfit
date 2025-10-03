@@ -41,6 +41,11 @@ public class MeetingReviewService {
     }
 
     @Transactional(readOnly = true)
+    public List<MeetingReview> getAllReviewsForMeeting(Long meetingId) {
+        return meetingReviewRepository.findByMeetingId(meetingId);
+    }
+
+    @Transactional(readOnly = true)
     public Page<MeetingReview> getUserReviews(UserAuth user, Pageable pageable) {
         Pageable sortedPageable = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), Sort.by(Sort.Direction.DESC, "createdAt"));
         return meetingReviewRepository.findByUser(user, sortedPageable);

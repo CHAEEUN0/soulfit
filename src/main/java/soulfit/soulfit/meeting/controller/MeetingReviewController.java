@@ -10,10 +10,14 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.meeting.domain.MeetingReview;
+import soulfit.soulfit.meeting.dto.ai.AiReviewResponseDto;
 import soulfit.soulfit.meeting.dto.MeetingReviewRequestDto;
 import soulfit.soulfit.meeting.dto.MeetingReviewResponseDto;
 import soulfit.soulfit.meeting.dto.MeetingReviewUpdateRequestDto;
+import soulfit.soulfit.meeting.service.AiReviewAnalysisService;
 import soulfit.soulfit.meeting.service.MeetingReviewService;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -21,12 +25,21 @@ import soulfit.soulfit.meeting.service.MeetingReviewService;
 public class MeetingReviewController {
 
     private final MeetingReviewService meetingReviewService;
+    private final AiReviewAnalysisService aiReviewAnalysisService;
 
     //모임의 모든 리뷰(최신순)
     @GetMapping("meetings/{meetingId}/reviews")
     public ResponseEntity<Page<MeetingReviewResponseDto>> getAllReviews(@PathVariable Long meetingId,  Pageable pageable){
         Page<MeetingReview> meetingReviews = meetingReviewService.getAllReviews(meetingId, pageable);
         return ResponseEntity.ok(meetingReviews.map(MeetingReviewResponseDto::from));
+    }
+
+    // New endpoint for AI review summary
+    @GetMapping("meetings/{meetingId}/reviews/summary")
+    public ResponseEntity<AiReviewResponseDto> getMeetingReviewSummary(@PathVariable Long meetingId) {
+        List<MeetingReview> reviews = meetingReviewService.getAllReviewsForMeeting(meetingId);
+        AiReviewResponseDto aiResponse = aiReviewAnalysisService.analyzeReviewsByRestTemplate(reviews);
+        return ResponseEntity.ok(aiResponse);
     }
 
     //내가 쓴 모임 리뷰(최신순)
