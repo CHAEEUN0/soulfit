@@ -64,5 +64,20 @@ public class UserInitializer implements CommandLineRunner {
 
             System.out.println("Regular user created: username=user2, password=user234");
         }
+
+        for (int i = 3; i <= 12; i++) {
+            String username = "user" + i;
+            if (!userRepository.existsByUsername(username)) {
+                UserAuth userAuth = new UserAuth();
+                userAuth.setUsername(username);
+                userAuth.setPassword(passwordEncoder.encode(username + "123"));
+                userAuth.setEmail(username + "@example.com");
+                userAuth.setRole(Role.USER);
+                userAuth.setEnabled(true);
+                userAuth.setAccountStatus(AccountStatus.ACTIVE);
+                userRepository.save(userAuth);
+                System.out.println("Regular user created: username=" + username);
+            }
+        }
     }
 }
