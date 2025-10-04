@@ -34,54 +34,75 @@ public class MatchingProfileInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // If matching profiles already exist, do nothing.
-        if (matchingProfileRepository.count() > 0) {
-            return;
-        }
-
         UserAuth regularUser = userRepository.findByUsername("user").orElse(null);
-        UserAuth regularUser2 = userRepository.findByUsername("user2").orElse(null);
-
-        if (regularUser == null || regularUser2 == null) {
-            System.out.println("Skipping MatchingProfileInitializer: user or user2 not found.");
-            return;
+        if (regularUser != null && !matchingProfileRepository.findByUserAuth(regularUser).isPresent()) {
+            Set<IdealTypeKeyword> idealTypes1 = createKeywords("운동 좋아함", "유머러스함", "배려심 깊음");
+            MatchingProfile matchingProfile1 = MatchingProfile.builder()
+                    .userAuth(regularUser)
+                    .bio("안녕하세요! 함께 운동하며 즐거운 시간 보내고 싶어요.")
+                    .visibility(Visibility.PUBLIC)
+                    .job("디자이너")
+                    .heightCm(165)
+                    .weightKg(55)
+                    .religion(Religion.NONE)
+                    .smoking(SmokingHabit.NON_SMOKER)
+                    .drinking(DrinkingHabit.SOMETIMES)
+                    .idealTypes(idealTypes1)
+                    .build();
+            matchingProfileRepository.save(matchingProfile1);
+            System.out.println("✅ Matching profile created for user.");
         }
 
-        // Create and save some ideal type keywords
-        Set<IdealTypeKeyword> idealTypes1 = createKeywords("운동 좋아함", "유머러스함", "배려심 깊음");
-        Set<IdealTypeKeyword> idealTypes2 = createKeywords("차분함", "지적임", "운동 좋아함");
+        UserAuth regularUser2 = userRepository.findByUsername("user2").orElse(null);
+        if (regularUser2 != null && !matchingProfileRepository.findByUserAuth(regularUser2).isPresent()) {
+            Set<IdealTypeKeyword> idealTypes2 = createKeywords("차분함", "지적임", "운동 좋아함");
+            MatchingProfile matchingProfile2 = MatchingProfile.builder()
+                    .userAuth(regularUser2)
+                    .bio("조용히 운동하는 것을 좋아합니다. 같이 성장할 분 환영해요.")
+                    .visibility(Visibility.PUBLIC)
+                    .job("개발자")
+                    .heightCm(180)
+                    .weightKg(75)
+                    .religion(Religion.NONE)
+                    .smoking(SmokingHabit.NON_SMOKER)
+                    .drinking(DrinkingHabit.NEVER)
+                    .idealTypes(idealTypes2)
+                    .build();
+            matchingProfileRepository.save(matchingProfile2);
+            System.out.println("✅ Matching profile created for user2.");
+        }
 
-        // Create MatchingProfile for 'user'
-        MatchingProfile matchingProfile1 = MatchingProfile.builder()
-                .userAuth(regularUser)
-                .bio("안녕하세요! 함께 운동하며 즐거운 시간 보내고 싶어요.")
-                .visibility(Visibility.PUBLIC)
-                .job("디자이너")
-                .heightCm(165)
-                .weightKg(55)
-                .religion(Religion.NONE)
-                .smoking(SmokingHabit.NON_SMOKER)
-                .drinking(DrinkingHabit.SOMETIMES)
-                .idealTypes(idealTypes1)
-                .build();
-        matchingProfileRepository.save(matchingProfile1);
+        // Additional matching profiles
+        for (int i = 3; i <= 12; i++) {
+            UserAuth user = userRepository.findByUsername("user" + i).orElse(null);
+            if (user != null && !matchingProfileRepository.findByUserAuth(user).isPresent()) {
+                String[] jobs = {"학생", "교사", "의사", "엔지니어", "프리랜서", "자영업자", "마케터", "연구원", "공무원", "예술가"};
+                Religion[] religions = Religion.values();
+                SmokingHabit[] smokingHabits = SmokingHabit.values();
+                DrinkingHabit[] drinkingHabits = DrinkingHabit.values();
+                String[][] keywordSets = {
+                    {"성실함", "책임감 강함"}, {"긍정적임", "사교적임"}, {"독창적임", "예술적 감각"},
+                    {"논리적임", "분석적임"}, {"공감 능력 뛰어남", "따뜻함"}, {"모험심 강함", "도전적임"},
+                    {"신중함", "계획적임"}, {"유연함", "적응력 좋음"}, {"정직함", "솔직함"}, {"인내심 많음", "끈기 있음"}
+                };
 
-        // Create MatchingProfile for 'user2'
-        MatchingProfile matchingProfile2 = MatchingProfile.builder()
-                .userAuth(regularUser2)
-                .bio("조용히 운동하는 것을 좋아합니다. 같이 성장할 분 환영해요.")
-                .visibility(Visibility.PUBLIC)
-                .job("개발자")
-                .heightCm(180)
-                .weightKg(75)
-                .religion(Religion.NONE)
-                .smoking(SmokingHabit.NON_SMOKER)
-                .drinking(DrinkingHabit.NEVER)
-                .idealTypes(idealTypes2)
-                .build();
-        matchingProfileRepository.save(matchingProfile2);
-
-        System.out.println("✅ Matching profiles created for user and user2.");
+                int index = i - 3;
+                MatchingProfile profile = MatchingProfile.builder()
+                        .userAuth(user)
+                        .bio("새로운 사람들과 만나 운동하는 것을 좋아합니다. 잘 부탁드립니다!")
+                        .visibility(Visibility.PUBLIC)
+                        .job(jobs[index % jobs.length])
+                        .heightCm(170 + (i % 15)) // 170-184
+                        .weightKg(60 + (i % 20)) // 60-79
+                        .religion(religions[index % religions.length])
+                        .smoking(smokingHabits[index % smokingHabits.length])
+                        .drinking(drinkingHabits[index % drinkingHabits.length])
+                        .idealTypes(createKeywords(keywordSets[index % keywordSets.length]))
+                        .build();
+                matchingProfileRepository.save(profile);
+            }
+        }
+        System.out.println("✅ Additional 10 matching profiles created.");
     }
 
     private Set<IdealTypeKeyword> createKeywords(String... keywords) {

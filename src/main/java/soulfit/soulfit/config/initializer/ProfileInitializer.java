@@ -76,6 +76,34 @@ public class ProfileInitializer implements CommandLineRunner {
             userProfile2.setLongitude(126.9517);
             userProfileRepository.save(userProfile2);
 
+            // Additional user profiles
+            for (int i = 3; i <= 12; i++) {
+                UserAuth user = userRepository.findByUsername("user" + i).orElse(null);
+                if (user != null && !userProfileRepository.findByUserAuth(user).isPresent()) {
+                    Gender gender = (i % 2 == 0) ? Gender.FEMALE : Gender.MALE;
+                    MbtiType[] mbtiTypes = MbtiType.values();
+                    MbtiType mbti = mbtiTypes[(i - 3) % mbtiTypes.length];
+
+                    String[] regions = {"서울 용산구", "서울 성동구", "서울 광진구", "서울 동대문구", "서울 중랑구", "서울 성북구", "서울 강북구", "서울 도봉구", "서울 노원구", "서울 은평구"};
+                    double[] latitudes = {37.5326, 37.5635, 37.5385, 37.5744, 37.6066, 37.5895, 37.6396, 37.6688, 37.6542, 37.6028};
+                    double[] longitudes = {126.9900, 127.0368, 127.0823, 127.0397, 127.0932, 127.0167, 127.0257, 127.0471, 127.0618, 126.9291};
+                    int regionIndex = (i - 3) % regions.length;
+
+                    UserProfile profile = new UserProfile(
+                        user,
+                        LocalDate.of(1990 + (i % 10), (i % 12) + 1, (i % 28) + 1),
+                        gender,
+                        mbti,
+                        "https://picsum.photos/200/300?random=" + (i + 3),
+                        "안녕하세요! user" + i + "입니다. 함께 즐겁게 운동하고 싶어요."
+                    );
+                    profile.setRegion(regions[regionIndex]);
+                    profile.setLatitude(latitudes[regionIndex]);
+                    profile.setLongitude(longitudes[regionIndex]);
+                    userProfileRepository.save(profile);
+                }
+            }
+
             System.out.println("✅ User profiles created (without nickname field).");
         }
     }
