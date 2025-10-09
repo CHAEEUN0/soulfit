@@ -14,4 +14,5 @@ public interface MeetingRepository extends JpaRepository<Meeting, Long>, Meeting
 
     List<Meeting> findByHost(UserAuth host);
 
+    List<Meeting> findByTitle(String title);
 }
