@@ -5,9 +5,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import soulfit.soulfit.chat.ai.AIAnalysisResponseDto;
+import soulfit.soulfit.chat.ai.*;
 
 import java.util.List;
 import java.util.Random;
@@ -60,5 +59,21 @@ public class AiChatClient {
 //            return null;
 //        }
         // ================= 실제 로직 종료 ================= */
+    }
+
+
+    public AiChatAnalysisResponseDto analyzeMessage(AiChatAnalysisRequestDto requestDto) {
+        return restTemplate.postForObject(
+                aiServerUrl + "/Chat/",
+                requestDto,
+                AiChatAnalysisResponseDto.class);
+       }
+
+
+    public AiRecommendResponseDto recommendChat(AiRecommendRequestDto requestDto){
+        return restTemplate.postForObject(
+                aiServerUrl + "/Chat/recommend",
+                requestDto,
+                AiRecommendResponseDto.class);
     }
 }

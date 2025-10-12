@@ -16,10 +16,7 @@ import soulfit.soulfit.meeting.domain.MeetingParticipant;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -33,6 +30,34 @@ public class ChatService {
     private final UserRepository userRepository;
     private final S3Uploader s3Uploader;
     private final AIAnalysisService aiAnalysisService;
+
+
+    public List<ChatMessage> getRecentMessages(Long roomId) {
+        List<ChatMessage> recent = chatMessageRepository
+                .findTop50ByChatRoomIdOrderByCreatedAtDesc(roomId);
+
+        Collections.reverse(recent);
+
+        return recent;
+    }
+
+    public Long getLastMyMessageId(Long chatRoomId, String myName) {
+        return chatMessageRepository
+                .findTopByChatRoomIdAndSenderOrderByCreatedAtDesc(chatRoomId, myName)
+                .map(ChatMessage::getId)
+                .orElse(null);
+    }
+
+    public List<ChatMessage> getMessagesAfter(Long chatRoomId, String sender, Long lastMessageId) {
+        return chatMessageRepository
+                .findByChatRoomIdAndIdGreaterThanAndSenderNotOrderByCreatedAtAsc(
+                        chatRoomId,
+                        lastMessageId,
+                        sender
+                );
+    }
+
+
 
 
     @Transactional(readOnly = true)
