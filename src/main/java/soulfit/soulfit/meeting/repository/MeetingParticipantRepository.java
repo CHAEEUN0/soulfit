@@ -27,4 +27,10 @@ public interface MeetingParticipantRepository extends JpaRepository<MeetingParti
             "AND mp.meeting.meetingStatus = 'FINISHED'")
     Page<Meeting> findMeetingUserParticipated(@Param("user") UserAuth user, Pageable pageable);
 
+    @Query("SELECT mp.meeting FROM MeetingParticipant mp " +
+            "WHERE mp.user = :user " +
+            "AND mp.approvalStatus = 'APPROVED' " +
+            "AND mp.meeting.meetingStatus = 'FINISHED'")
+    List<Meeting> findAllMeetingUserParticipated(@Param("user") UserAuth user);
+
 }

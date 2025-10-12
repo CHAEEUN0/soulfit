@@ -15,6 +15,9 @@ public interface MeetingReviewRepository extends JpaRepository<MeetingReview, Lo
     Page<MeetingReview> findByMeetingId(Long meetingId, Pageable pageable);
     List<MeetingReview> findByMeetingId(Long meetingId);
     Page<MeetingReview> findByUser(UserAuth user, Pageable pageable);
+
+    List<MeetingReview> findAllByUser(UserAuth user);
+
     @Query("SELECT AVG(r.hostRating) FROM MeetingReview r WHERE r.meeting.host.id = :hostId")
     Double findAverageHostRatingByHostId(@Param("hostId") Long hostId);
 }
