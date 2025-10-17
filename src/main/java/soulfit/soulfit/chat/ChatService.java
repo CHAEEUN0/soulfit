@@ -75,8 +75,10 @@ public class ChatService {
             long unreadCount = Math.max(0, room.getLastSeq() - chatParticipant.getLastReadSeq());
 
             String roomDisplayName;
+            String roomImageUrl = null; // 이미지 URL 변수 초기화
+
             if (room.getType() == ChatRoomType.Direct) {
-                // 1:1 채팅방: 상대방의 이름을 찾는다.
+                // 1:1 채팅방: 상대방 정보에서 이름과 프로필 이미지를 가져온다.
                 List<ChatParticipant> participants =
                         chatParticipantRepository.findByChatRoom(room);
                 UserAuth otherUser = participants.stream()
@@ -84,18 +86,34 @@ public class ChatService {
                         .filter(participantUser -> !participantUser.getId().equals(user.getId()))
                         .findFirst()
                         .orElse(null);
-                roomDisplayName = (otherUser != null) ? otherUser.getUsername() : "(알 수 없음)";
-            } else {
-                // 그룹 채팅방: 기존 방 이름을 사용한다.
+
+                if (otherUser != null) {
+                    roomDisplayName = otherUser.getUsername();
+                    if (otherUser.getUserProfile() != null) {
+                        roomImageUrl = otherUser.getUserProfile().getProfileImageUrl();
+                    }
+                } else {
+                    roomDisplayName = "(알 수 없음)";
+                }
+            } else { // GROUP 타입
+                // 그룹 채팅방: 기존 방 이름과 모임의 대표 이미지를 가져온다.
                 roomDisplayName = room.getName();
+                if (room.getMeeting() != null && room.getMeeting().getImages() != null && !room.getMeeting().getImages().isEmpty()) {
+                    // order를 기준으로 정렬하여 첫 번째 이미지를 대표 이미지로 사용
+                    roomImageUrl = room.getMeeting().getImages().stream()
+                            .min(java.util.Comparator.comparing(soulfit.soulfit.meeting.domain.MeetingImage::getOrder))
+                            .map(soulfit.soulfit.meeting.domain.MeetingImage::getImageUrl)
+                            .orElse(null);
+                }
             }
 
             return new ChatRoomListDto(
                     room.getId(),
-                    roomDisplayName, // 수정된 이름으로 DTO 생성
+                    roomDisplayName,
                     lastMessage != null ? lastMessage.getMessage() : null,
                     room.getUpdatedAt(),
-                    unreadCount
+                    unreadCount,
+                    roomImageUrl // DTO에 이미지 URL 추가
             );
         });
     }
