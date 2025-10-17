@@ -74,12 +74,29 @@ public class ChatService {
 
             long unreadCount = Math.max(0, room.getLastSeq() - chatParticipant.getLastReadSeq());
 
+            String roomDisplayName;
+            if (room.getType() == ChatRoomType.Direct) {
+                // 1:1 채팅방: 상대방의 이름을 찾는다.
+                List<ChatParticipant> participants =
+                        chatParticipantRepository.findByChatRoom(room);
+                UserAuth otherUser = participants.stream()
+                        .map(ChatParticipant::getUser)
+                        .filter(participantUser -> !participantUser.getId().equals(user.getId()))
+                        .findFirst()
+                        .orElse(null);
+                roomDisplayName = (otherUser != null) ? otherUser.getUsername() : "(알 수 없음)";
+            } else {
+                // 그룹 채팅방: 기존 방 이름을 사용한다.
+                roomDisplayName = room.getName();
+            }
+
             return new ChatRoomListDto(
                     room.getId(),
-                    room.getName(),
+                    roomDisplayName, // 수정된 이름으로 DTO 생성
                     lastMessage != null ? lastMessage.getMessage() : null,
-                    room.getUpdatedAt()
-                    , unreadCount);
+                    room.getUpdatedAt(),
+                    unreadCount
+            );
         });
     }
 
