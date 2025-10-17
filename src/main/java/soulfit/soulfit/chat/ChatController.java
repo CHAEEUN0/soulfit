@@ -4,7 +4,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -12,7 +11,9 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import soulfit.soulfit.authentication.entity.UserAuth;
-
+import soulfit.soulfit.chat.ai.AiChatAnalysisResponseDto;
+import soulfit.soulfit.chat.ai.AiChatService;
+import soulfit.soulfit.chat.ai.AiRecommendResponseDto;
 import java.security.Principal;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import static org.springframework.http.HttpStatus.CREATED;
 public class ChatController {
 
     private final ChatService chatService;
+    private final AiChatService aiChatService;
     private final SimpMessagingTemplate messagingTemplate;
 
 
@@ -51,6 +53,40 @@ public class ChatController {
         Long roomId = chatService.getOrCreateChatRoom(otherUserId, user);
         return ResponseEntity.ok(roomId);
     }
+
+
+
+    // AI 대화 분석
+    @GetMapping("/rooms/{roomId}/messages/analysis")
+    public ResponseEntity<AiChatAnalysisResponseDto> analyzeChat(@PathVariable Long roomId, @AuthenticationPrincipal UserAuth user) {
+        // 분석할 메세지들
+        List<ChatMessage> messages = chatService.getRecentMessages(roomId);
+        AiChatAnalysisResponseDto response = aiChatService.analyzeChat(messages);
+        return ResponseEntity.ok(response);
+    }
+
+
+    // AI 메세지 추천
+    @GetMapping("/rooms/{roomId}/messages/recommend")
+    public ResponseEntity<AiRecommendResponseDto> recommendChat(@PathVariable Long roomId, @AuthenticationPrincipal UserAuth user) {
+
+        //내가 마지막으로 보낸 메세지 이후 상대의 답장들
+        Long lastMyMessageId = chatService.getLastMyMessageId(roomId, user.getUsername());
+
+        if (lastMyMessageId == null) {
+            return ResponseEntity.badRequest().build(); // 답장 없으면 추천 불가
+        }
+
+        List<ChatMessage> replies =
+                chatService.getMessagesAfter(roomId, user.getUsername(), lastMyMessageId);
+
+
+        AiRecommendResponseDto response = aiChatService.recommendChat(replies);
+        return ResponseEntity.ok(response);
+    }
+
+
+
 
     //단체(모임용)
     @PostMapping("/rooms/meetings/{meetingId}")
