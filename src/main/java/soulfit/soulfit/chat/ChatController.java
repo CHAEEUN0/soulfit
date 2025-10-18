@@ -17,8 +17,11 @@ import soulfit.soulfit.chat.ai.AiRecommendResponseDto;
 import java.security.Principal;
 import java.util.List;
 
+import lombok.extern.slf4j.Slf4j;
+
 import static org.springframework.http.HttpStatus.CREATED;
 
+@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/chat")
@@ -54,6 +57,12 @@ public class ChatController {
         return ResponseEntity.ok(roomId);
     }
 
+    @PostMapping("/{roomId}/read")
+    public ResponseEntity<Void> readMessages(@PathVariable Long roomId, @AuthenticationPrincipal UserAuth user) {
+        log.info("Request from user: {} to mark all messages as read for room: {}", user.getUsername(), roomId);
+        chatService.readMessages(roomId, user);
+        return ResponseEntity.ok().build();
+    }
 
 
     // AI 대화 분석
@@ -132,5 +141,4 @@ public class ChatController {
         messagingTemplate.convertAndSend("/topic/room/" + roomId, responseDto);
         return ResponseEntity.ok(responseDto);
     }
-
 }
