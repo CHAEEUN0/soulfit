@@ -18,7 +18,6 @@ import soulfit.soulfit.meeting.repository.MeetingRepository;
 import soulfit.soulfit.profile.domain.UserProfile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -40,6 +39,9 @@ class ChatServiceTest {
 
     @Autowired
     private MeetingRepository meetingRepository;
+
+    @Autowired
+    private ChatMessageRepository chatMessageRepository;
 
     private UserAuth userA;
     private UserAuth userB;
@@ -80,6 +82,7 @@ class ChatServiceTest {
         ChatRoomListDto chatRoomDto = result.getContent().get(0);
         assertThat(chatRoomDto.getRoomName()).isEqualTo(userB.getUsername());
         assertThat(chatRoomDto.getImageUrl()).isEqualTo(opponentProfileUrl);
+        assertThat(chatRoomDto.getUnreadCount()).isZero();
     }
 
     @Test
@@ -126,5 +129,61 @@ class ChatServiceTest {
         ChatRoomListDto chatRoomDto = result.getContent().get(0);
         assertThat(chatRoomDto.getRoomName()).isEqualTo(groupChatName);
         assertThat(chatRoomDto.getImageUrl()).isEqualTo(meetingImageUrl);
+        assertThat(chatRoomDto.getUnreadCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("안 읽은 메시지 수 계산 및 초기화 기능이 정확하게 동작해야 한다")
+    void unreadCount_and_readMessages_behavesCorrectly() {
+        // given: userA, userB, 1:1 채팅방 생성
+        userRepository.save(userA);
+        userRepository.save(userB);
+        ChatRoom directRoom = ChatRoom.builder().type(ChatRoomType.Direct).build();
+        chatRoomRepository.save(directRoom);
+        ChatParticipant participantA = ChatParticipant.builder().chatRoom(directRoom).user(userA).lastReadSeq(0L).build();
+        ChatParticipant participantB = ChatParticipant.builder().chatRoom(directRoom).user(userB).lastReadSeq(0L).build();
+        chatParticipantRepository.save(participantA);
+        chatParticipantRepository.save(participantB);
+
+        // 1. 상대방(userB)이 메시지 2개 전송
+        sendMessage(directRoom, userB, "Hello", 1L);
+        sendMessage(directRoom, userB, "How are you?", 2L);
+
+        // when: userA가 채팅 목록 조회
+        Page<ChatRoomListDto> resultAfterBsent = chatService.getMyRooms(userA, PageRequest.of(0, 10));
+
+        // then: userA의 안 읽은 메시지 수는 2개여야 함
+        assertThat(resultAfterBsent.getContent().get(0).getUnreadCount()).isEqualTo(2);
+
+        // 2. 나(userA)도 메시지 1개 전송
+        sendMessage(directRoom, userA, "I am fine, thank you!", 3L);
+
+        // when: userA가 다시 채팅 목록 조회
+        Page<ChatRoomListDto> resultAfterAsent = chatService.getMyRooms(userA, PageRequest.of(0, 10));
+
+        // then: userA의 안 읽은 메시지 수는 여전히 2개여야 함 (자신이 보낸 메시지는 카운트 X)
+        assertThat(resultAfterAsent.getContent().get(0).getUnreadCount()).isEqualTo(2);
+
+        // 3. userA가 채팅방을 읽음 처리
+        // when: userA가 '모두 읽음' API 호출
+        chatService.readMessages(directRoom.getId(), userA);
+
+        // when: userA가 다시 채팅 목록 조회
+        Page<ChatRoomListDto> resultAfterRead = chatService.getMyRooms(userA, PageRequest.of(0, 10));
+
+        // then: userA의 안 읽은 메시지 수는 0으로 초기화되어야 함
+        assertThat(resultAfterRead.getContent().get(0).getUnreadCount()).isZero();
+    }
+
+    private void sendMessage(ChatRoom room, UserAuth sender, String message, long seq) {
+        ChatMessage chatMessage = ChatMessage.builder()
+                .chatRoom(room)
+                .sender(sender.getUsername())
+                .message(message)
+                .seq(seq)
+                .build();
+        chatMessageRepository.save(chatMessage);
+        room.setLastSeq(seq);
+        chatRoomRepository.save(room);
     }
 }

@@ -32,4 +32,7 @@ public class ChatParticipant {
     public void setLastReadSeq(long lastReadSeq) {
         this.lastReadSeq = lastReadSeq;
     }
+    public void updateLastReadSeq(long lastReadSeq) {
+        this.lastReadSeq = lastReadSeq;
+    }
 }

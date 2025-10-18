@@ -1,6 +1,7 @@
 package soulfit.soulfit.chat;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -10,14 +11,15 @@ import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.chat.ai.AIAnalysisService;
 import soulfit.soulfit.common.S3Uploader;
-import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.domain.MeetingImage;
 import soulfit.soulfit.meeting.domain.MeetingParticipant;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
+import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 
 import java.util.*;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ChatService {
@@ -57,8 +59,17 @@ public class ChatService {
                 );
     }
 
+    @Transactional
+    public void readMessages(Long roomId, UserAuth user) {
+        ChatRoom chatRoom = chatRoomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("room not found"));
 
+        ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUser(chatRoom, user)
+                .orElseThrow(() -> new IllegalStateException("참가자가 아님"));
 
+        log.debug("Updating lastReadSeq for user: {} in room: {}. New lastReadSeq: {}", user.getUsername(), roomId, chatRoom.getLastSeq());
+        chatParticipant.updateLastReadSeq(chatRoom.getLastSeq());
+    }
 
     @Transactional(readOnly = true)
     public Page<ChatRoomListDto> getMyRooms(UserAuth user, Pageable pageable) {
@@ -72,7 +83,8 @@ public class ChatService {
             ChatParticipant chatParticipant = chatParticipantRepository.findByChatRoomAndUser(room, user)
                     .orElseThrow(() -> new IllegalStateException("참가자가 아님"));
 
-            long unreadCount = Math.max(0, room.getLastSeq() - chatParticipant.getLastReadSeq());
+            long unreadCount = chatMessageRepository.countByChatRoomAndSenderNotAndSeqGreaterThan(room, user.getUsername(), chatParticipant.getLastReadSeq());
+            log.debug("User: {}, Room: {}, Unread count: {}", user.getUsername(), room.getId(), unreadCount);
 
             String roomDisplayName;
             String roomImageUrl = null; // 이미지 URL 변수 초기화
