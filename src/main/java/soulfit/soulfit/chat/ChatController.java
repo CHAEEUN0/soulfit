@@ -123,6 +123,8 @@ public class ChatController {
     public void sendMessage(@Valid ChatMessageRequestDto dto, @AuthenticationPrincipal Principal principal) {
         String username = principal.getName();
         dto.setSender(username);
+
+        // 1. 메시지 저장 및 전송
         ChatMessage chatMessage = chatService.sendMessage(dto);
         messagingTemplate.convertAndSend("/topic/room/" + dto.getRoomId(), ChatMessageResponseDto.from(chatMessage));
     }

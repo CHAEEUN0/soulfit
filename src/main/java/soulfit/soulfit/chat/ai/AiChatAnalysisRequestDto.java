@@ -11,7 +11,7 @@ import java.util.List;
 @AllArgsConstructor
 public class AiChatAnalysisRequestDto {
 
-    private Long chatRoomId;
+    private String chatRoomId;
     private List<MessageData> messages;
 
     @Data

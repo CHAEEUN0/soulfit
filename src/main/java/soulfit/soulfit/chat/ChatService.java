@@ -10,6 +10,7 @@ import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.chat.ai.AIAnalysisService;
+import soulfit.soulfit.chat.ai.AiChatService;
 import soulfit.soulfit.common.S3Uploader;
 import soulfit.soulfit.meeting.domain.MeetingImage;
 import soulfit.soulfit.meeting.domain.MeetingParticipant;
@@ -31,7 +32,7 @@ public class ChatService {
     private final MeetingParticipantRepository meetingParticipantRepository;
     private final UserRepository userRepository;
     private final S3Uploader s3Uploader;
-    private final AIAnalysisService aiAnalysisService;
+    private final AiChatService aiChatService;
 
 
     public List<ChatMessage> getRecentMessages(Long roomId) {
@@ -240,7 +241,10 @@ public class ChatService {
         chatMessage.setSeq(next);
         chatRoom.addMessage(chatMessage);
 
-        aiAnalysisService.analyzeConversationAndBroadcast(dto.getRoomId());
+        List<ChatMessage> recentMessages = getRecentMessages(dto.getRoomId());
+        aiChatService.analyzeAndBroadcast(recentMessages);
+
+//        aiAnalysisService.analyzeConversationAndBroadcast(dto.getRoomId());
 
         return chatMessageRepository.save(chatMessage);
     }
