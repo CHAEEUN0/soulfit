@@ -164,4 +164,28 @@ public class TestService {
         );
     }
 
+    public List<Integer> getLifeValuesByUserId(Long userId) {
+        return getValuesByUserIdAndTestType(userId, TestType.TYPE_A);
+    }
+
+    public List<Integer> getLoveValuesByUserId(Long userId) {
+        return getValuesByUserIdAndTestType(userId, TestType.TYPE_B);
+    }
+
+    private List<Integer> getValuesByUserIdAndTestType(Long userId, TestType testType) {
+        // Find the most recent completed session for the user and test type
+        TestSession session = testSessionRepository.findFirstByUserIdAndTestTypeAndStatusOrderBySubmittedAtDesc(
+                        userId, testType, SessionStatus.COMPLETED)
+                .orElseThrow(() -> new IllegalArgumentException("No completed test session found for user " + userId + " and test type " + testType));
+
+        // Get answers for the session
+        List<TestAnswer> answers = testAnswerRepository.findBySessionId(session.getId());
+
+        // Extract selectedChoiceId from each answer
+        return answers.stream()
+                .filter(answer -> answer.getSelectedChoice() != null)
+                .map(answer -> answer.getSelectedChoice().getId().intValue()) // Assuming selectedChoiceId is a Long, convert to int
+                .collect(Collectors.toList());
+    }
+
 }
