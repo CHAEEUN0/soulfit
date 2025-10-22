@@ -21,7 +21,7 @@ public class AiChatClient {
     private String aiServerUrl;
 
     @Autowired
-    public AiChatClient(@Qualifier("aiRestTemplate") RestTemplate restTemplate) {
+    public AiChatClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
