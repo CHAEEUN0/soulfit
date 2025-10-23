@@ -3,6 +3,7 @@ package soulfit.soulfit.matching.review.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.chat.ChatRoom;
 import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
 import soulfit.soulfit.matching.review.domain.Review;
 
@@ -18,7 +19,7 @@ public interface ReviewRepository extends JpaRepository<Review, Long> {
 
     List<Review> findByReviewerId(Long reviewerId);
 
-    boolean existsByConversationRequestAndReviewer(ConversationRequest conversationRequest, UserAuth reviewer);
+    boolean existsByChatRoomAndReviewer(ChatRoom chatRoom, UserAuth reviewer);
 
     @Query("SELECT rk.keyword FROM Review r JOIN r.keywords rk WHERE r.reviewee.id = :userId GROUP BY rk.keyword ORDER BY COUNT(rk.keyword) DESC")
     List<String> findTopKeywordsByRevieweeId(@Param("userId") Long userId, Pageable pageable);
