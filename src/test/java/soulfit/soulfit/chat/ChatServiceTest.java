@@ -175,6 +175,68 @@ class ChatServiceTest {
         assertThat(resultAfterRead.getContent().get(0).getUnreadCount()).isZero();
     }
 
+    @Test
+    @DisplayName("1:1 채팅방 목록 조회 시, opponentId는 상대방 유저 ID여야 한다")
+    void getMyRooms_forDirectChat_returnsOpponentId() {
+        // given
+        userRepository.save(userA);
+        userRepository.save(userB);
+
+        ChatRoom directRoom = ChatRoom.builder()
+                .type(ChatRoomType.Direct)
+                .build();
+        chatRoomRepository.save(directRoom);
+
+        ChatParticipant participantA = ChatParticipant.builder().chatRoom(directRoom).user(userA).build();
+        ChatParticipant participantB = ChatParticipant.builder().chatRoom(directRoom).user(userB).build();
+        chatParticipantRepository.save(participantA);
+        chatParticipantRepository.save(participantB);
+
+        // when
+        Page<ChatRoomListDto> result = chatService.getMyRooms(userA, PageRequest.of(0, 10));
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        ChatRoomListDto chatRoomDto = result.getContent().get(0);
+        assertThat(chatRoomDto.getOpponentId()).isEqualTo(userB.getId().intValue());
+    }
+
+    @Test
+    @DisplayName("그룹 채팅방 목록 조회 시, opponentId는 관련된 meeting ID여야 한다")
+    void getMyRooms_forGroupChat_returnsMeetingIdAsOpponentId() {
+        // given
+        userRepository.save(userA);
+
+        Meeting meeting = Meeting.builder()
+                .host(userA)
+                .title("Test Meeting")
+                .description("desc")
+                .category(Category.HOBBY)
+                .location(Location.builder().city("서울").build())
+                .fee(0)
+                .meetingTime(LocalDateTime.now().plusDays(1))
+                .build();
+        meetingRepository.save(meeting);
+
+        ChatRoom groupRoom = ChatRoom.builder()
+                .type(ChatRoomType.GROUP)
+                .name("Test Group Chat")
+                .meeting(meeting)
+                .build();
+        chatRoomRepository.save(groupRoom);
+
+        ChatParticipant participantA = ChatParticipant.builder().chatRoom(groupRoom).user(userA).build();
+        chatParticipantRepository.save(participantA);
+
+        // when
+        Page<ChatRoomListDto> result = chatService.getMyRooms(userA, PageRequest.of(0, 10));
+
+        // then
+        assertThat(result.getContent()).hasSize(1);
+        ChatRoomListDto chatRoomDto = result.getContent().get(0);
+        assertThat(chatRoomDto.getOpponentId()).isEqualTo(meeting.getId().intValue());
+    }
+
     private void sendMessage(ChatRoom room, UserAuth sender, String message, long seq) {
         ChatMessage chatMessage = ChatMessage.builder()
                 .chatRoom(room)

@@ -15,4 +15,5 @@ public class ChatRoomListDto {
     private LocalDateTime lastMessageTime;
     private long unreadCount;
     private String imageUrl;
+    private Integer opponentId;
 }
