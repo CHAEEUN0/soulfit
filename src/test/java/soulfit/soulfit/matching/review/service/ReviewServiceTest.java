@@ -11,9 +11,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
-import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
-import soulfit.soulfit.matching.conversation.domain.RequestStatus;
-import soulfit.soulfit.matching.conversation.repository.ConversationRequestRepository;
+import soulfit.soulfit.chat.ChatParticipant;
+import soulfit.soulfit.chat.ChatParticipantRepository;
+import soulfit.soulfit.chat.ChatRoomType;
+import soulfit.soulfit.chat.ChatRoom;
+import soulfit.soulfit.chat.ChatRoomRepository;
 import soulfit.soulfit.matching.review.domain.Review;
 import soulfit.soulfit.matching.review.domain.ReviewKeyword;
 import soulfit.soulfit.matching.review.dto.ReviewRequestDto;
@@ -45,14 +47,18 @@ class ReviewServiceTest {
     @Mock
     private UserRepository userRepository;
     @Mock
-    private ConversationRequestRepository conversationRequestRepository;
+    private ChatRoomRepository chatRoomRepository;
+    @Mock
+    private ChatParticipantRepository chatParticipantRepository;
 
     @InjectMocks
     private ReviewService reviewService;
 
     private UserAuth reviewer;
     private UserAuth reviewee;
-    private ConversationRequest conversationRequest;
+    private ChatRoom chatRoom;
+    private ChatParticipant reviewerParticipant;
+    private ChatParticipant revieweeParticipant;
     private ReviewRequestDto requestDto;
 
     @BeforeEach
@@ -63,26 +69,21 @@ class ReviewServiceTest {
         reviewee = new UserAuth("reviewee", "password123", "reviewee@test.com");
         reviewee.setId(2L);
 
-        conversationRequest = ConversationRequest.builder()
-                .fromUser(reviewer)
-                .toUser(reviewee)
-                .message("test message")
+        chatRoom = ChatRoom.builder()
+                .id(1L)
+                .name("Test ChatRoom")
+                .type(ChatRoomType.Direct)
                 .build();
-        try {
-            java.lang.reflect.Field idField = ConversationRequest.class.getDeclaredField("id");
-            idField.setAccessible(true);
-            idField.set(conversationRequest, 1L);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-        conversationRequest.updateStatus(RequestStatus.ACCEPTED);
+
+        reviewerParticipant = ChatParticipant.builder().chatRoom(chatRoom).user(reviewer).build();
+        revieweeParticipant = ChatParticipant.builder().chatRoom(chatRoom).user(reviewee).build();
 
         requestDto = new TestReviewRequestDto(2L, 1L, "Great conversation!", List.of("Polite", "Funny"));
     }
 
     // Helper DTO class for testing
     private static class TestReviewRequestDto extends ReviewRequestDto {
-        public TestReviewRequestDto(Long revieweeId, Long conversationRequestId, String comment, List<String> keywords) {
+        public TestReviewRequestDto(Long revieweeId, Long chatRoomId, String comment, List<String> keywords) {
             super();
             // Using reflection to set private fields, or make them protected for testing
             try {
@@ -90,9 +91,9 @@ class ReviewServiceTest {
                 field.setAccessible(true);
                 field.set(this, revieweeId);
 
-                field = ReviewRequestDto.class.getDeclaredField("conversationRequestId");
+                field = ReviewRequestDto.class.getDeclaredField("chatRoomId");
                 field.setAccessible(true);
-                field.set(this, conversationRequestId);
+                field.set(this, chatRoomId);
 
                 field = ReviewRequestDto.class.getDeclaredField("comment");
                 field.setAccessible(true);
@@ -111,8 +112,10 @@ class ReviewServiceTest {
     @DisplayName("리뷰 생성 성공")
     void createReview_Success() {
         // given
-        when(conversationRequestRepository.findById(1L)).thenReturn(Optional.of(conversationRequest));
-        when(reviewRepository.existsByConversationRequestAndReviewer(conversationRequest, reviewer)).thenReturn(false);
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(chatRoom));
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewer)).thenReturn(true);
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewee)).thenReturn(true);
+        when(reviewRepository.existsByChatRoomAndReviewer(chatRoom, reviewer)).thenReturn(false);
         when(userRepository.findById(2L)).thenReturn(Optional.of(reviewee));
         Set<ReviewKeyword> keywords = Set.of(new ReviewKeyword(1L, "Polite"), new ReviewKeyword(2L, "Funny"));
         when(reviewKeywordRepository.findByKeywordIn(List.of("Polite", "Funny"))).thenReturn(keywords);
@@ -142,44 +145,51 @@ class ReviewServiceTest {
     }
 
     @Test
-    @DisplayName("리뷰 생성 실패 - 대화가 존재하지 않음")
-    void createReview_Fail_ConversationNotFound() {
+    @DisplayName("리뷰 생성 실패 - 채팅방을 찾을 수 없음")
+    void createReview_Fail_ChatRoomNotFound() {
         // given
-        when(conversationRequestRepository.findById(anyLong())).thenReturn(Optional.empty());
+        when(chatRoomRepository.findById(anyLong())).thenReturn(Optional.empty());
 
         // when & then
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () -> {
             reviewService.createReview(reviewer, requestDto);
         });
-        assertThat(exception.getMessage()).isEqualTo("대화 요청을 찾을 수 없습니다.");
+        assertThat(exception.getMessage()).isEqualTo("채팅방을 찾을 수 없습니다.");
     }
 
-    @Test
-    @DisplayName("리뷰 생성 실패 - 수락되지 않은 대화")
-    void createReview_Fail_ConversationNotAccepted() {
-        // given
-        conversationRequest.updateStatus(RequestStatus.PENDING);
-        when(conversationRequestRepository.findById(1L)).thenReturn(Optional.of(conversationRequest));
 
-        // when & then
-        IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
-            reviewService.createReview(reviewer, requestDto);
-        });
-        assertThat(exception.getMessage()).isEqualTo("수락된 대화에 대해서만 리뷰를 작성할 수 있습니다.");
-    }
 
     @Test
     @DisplayName("리뷰 생성 실패 - 중복 리뷰")
     void createReview_Fail_DuplicateReview() {
         // given
-        when(conversationRequestRepository.findById(1L)).thenReturn(Optional.of(conversationRequest));
-        when(reviewRepository.existsByConversationRequestAndReviewer(conversationRequest, reviewer)).thenReturn(true);
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(chatRoom));
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewer)).thenReturn(true);
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewee)).thenReturn(true);
+        when(userRepository.findById(requestDto.getRevieweeId())).thenReturn(Optional.of(reviewee));
+        when(reviewRepository.existsByChatRoomAndReviewer(chatRoom, reviewer)).thenReturn(true);
 
         // when & then
         IllegalStateException exception = assertThrows(IllegalStateException.class, () -> {
             reviewService.createReview(reviewer, requestDto);
         });
-        assertThat(exception.getMessage()).isEqualTo("이미 해당 대화에 대한 리뷰를 작성했습니다.");
+        assertThat(exception.getMessage()).isEqualTo("이미 해당 채팅방에 대한 리뷰를 작성했습니다.");
+    }
+
+    @Test
+    @DisplayName("리뷰 생성 실패 - 리뷰어 또는 리뷰 대상자가 채팅방 참가자가 아님")
+    void createReview_Fail_NotChatRoomParticipant() {
+        // given
+        when(chatRoomRepository.findById(1L)).thenReturn(Optional.of(chatRoom));
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewer)).thenReturn(true);
+        when(chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewee)).thenReturn(false); // reviewee is not a participant
+        when(userRepository.findById(2L)).thenReturn(Optional.of(reviewee));
+
+        // when & then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            reviewService.createReview(reviewer, requestDto);
+        });
+        assertThat(exception.getMessage()).isEqualTo("리뷰어 또는 리뷰 대상자가 해당 채팅방의 참가자가 아닙니다.");
     }
 
     @Test

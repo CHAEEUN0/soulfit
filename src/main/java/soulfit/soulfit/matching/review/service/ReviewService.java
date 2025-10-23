@@ -9,9 +9,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
-import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
-import soulfit.soulfit.matching.conversation.domain.RequestStatus;
-import soulfit.soulfit.matching.conversation.repository.ConversationRequestRepository;
+import soulfit.soulfit.chat.ChatParticipant;
+import soulfit.soulfit.chat.ChatParticipantRepository;
+import soulfit.soulfit.chat.ChatRoom;
+import soulfit.soulfit.chat.ChatRoomRepository;
 import soulfit.soulfit.matching.review.domain.Review;
 import soulfit.soulfit.matching.review.domain.ReviewKeyword;
 import soulfit.soulfit.matching.review.dto.ReviewRequestDto;
@@ -37,7 +38,8 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final ReviewKeywordRepository reviewKeywordRepository;
     private final UserRepository userRepository;
-    private final ConversationRequestRepository conversationRequestRepository;
+    private final ChatRoomRepository chatRoomRepository;
+    private final ChatParticipantRepository chatParticipantRepository;
 
     @Transactional
     public ReviewResponseDto createReview(UserAuth reviewer, ReviewRequestDto requestDto) {
@@ -45,19 +47,23 @@ public class ReviewService {
             throw new IllegalArgumentException("자기 자신을 리뷰할 수 없습니다.");
         }
 
-        ConversationRequest conversationRequest = conversationRequestRepository.findById(requestDto.getConversationRequestId())
-                .orElseThrow(() -> new EntityNotFoundException("대화 요청을 찾을 수 없습니다."));
+        ChatRoom chatRoom = chatRoomRepository.findById(requestDto.getChatRoomId())
+                .orElseThrow(() -> new EntityNotFoundException("채팅방을 찾을 수 없습니다."));
 
-        // 대화 상태 및 참여자 검증
-        validateConversation(conversationRequest, reviewer.getId(), requestDto.getRevieweeId());
-
-        // 중복 리뷰 검증
-        if (reviewRepository.existsByConversationRequestAndReviewer(conversationRequest, reviewer)) {
-            throw new IllegalStateException("이미 해당 대화에 대한 리뷰를 작성했습니다.");
-        }
-
+        // 리뷰어와 리뷰이가 채팅방 참가자인지 검증
+        boolean reviewerIsParticipant = chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewer);
         UserAuth reviewee = userRepository.findById(requestDto.getRevieweeId())
                 .orElseThrow(() -> new EntityNotFoundException("리뷰 대상자를 찾을 수 없습니다."));
+        boolean revieweeIsParticipant = chatParticipantRepository.existsByChatRoomAndUser(chatRoom, reviewee);
+
+        if (!reviewerIsParticipant || !revieweeIsParticipant) {
+            throw new IllegalArgumentException("리뷰어 또는 리뷰 대상자가 해당 채팅방의 참가자가 아닙니다.");
+        }
+
+        // 중복 리뷰 검증
+        if (reviewRepository.existsByChatRoomAndReviewer(chatRoom, reviewer)) {
+            throw new IllegalStateException("이미 해당 채팅방에 대한 리뷰를 작성했습니다.");
+        }
 
         Set<ReviewKeyword> keywords = reviewKeywordRepository.findByKeywordIn(requestDto.getKeywords());
         if (keywords.size() != requestDto.getKeywords().size()) {
@@ -67,7 +73,7 @@ public class ReviewService {
         Review review = Review.builder()
                 .reviewer(reviewer)
                 .reviewee(reviewee)
-                .conversationRequest(conversationRequest)
+                .chatRoom(chatRoom)
                 .comment(requestDto.getComment())
                 .keywords(keywords)
                 .build();
@@ -76,21 +82,7 @@ public class ReviewService {
         return ReviewResponseDto.from(savedReview);
     }
 
-    private void validateConversation(ConversationRequest conversation, Long reviewerId, Long revieweeId) {
-        if (conversation.getStatus() != RequestStatus.ACCEPTED) {
-            throw new IllegalStateException("수락된 대화에 대해서만 리뷰를 작성할 수 있습니다.");
-        }
 
-        Long fromUserId = conversation.getFromUser().getId();
-        Long toUserId = conversation.getToUser().getId();
-
-        boolean isReviewerParticipant = reviewerId.equals(fromUserId) || reviewerId.equals(toUserId);
-        boolean isRevieweeParticipant = revieweeId.equals(fromUserId) || revieweeId.equals(toUserId);
-
-        if (!isReviewerParticipant || !isRevieweeParticipant) {
-            throw new IllegalStateException("대화에 참여한 사용자만 리뷰를 작성할 수 있습니다.");
-        }
-    }
 
     public List<ReviewResponseDto> getReviewsForUser(Long userId) {
         if (!userRepository.existsById(userId)) {

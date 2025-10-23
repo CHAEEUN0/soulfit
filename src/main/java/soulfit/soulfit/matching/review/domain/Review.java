@@ -6,6 +6,7 @@ import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.chat.ChatRoom;
 import soulfit.soulfit.matching.conversation.domain.ConversationRequest;
 
 import java.time.LocalDateTime;
@@ -34,8 +35,8 @@ public class Review {
     private UserAuth reviewee;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "conversation_request_id", nullable = false, unique = true)
-    private ConversationRequest conversationRequest;
+    @JoinColumn(name = "chat_room_id", nullable = false, unique = true)
+    private ChatRoom chatRoom;
 
     @Column(nullable = false, length = 500)
     private String comment;

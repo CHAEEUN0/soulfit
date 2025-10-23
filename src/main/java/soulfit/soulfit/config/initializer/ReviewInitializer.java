@@ -45,42 +45,42 @@ public class ReviewInitializer implements CommandLineRunner {
         Set<ReviewKeyword> savedKeywords = Set.copyOf(reviewKeywordRepository.findAll());
 
         // 2. 필요 데이터 조회
-        UserAuth user = userRepository.findByUsername("user").orElseThrow(() -> new RuntimeException("User 'user' not found."));
-        UserAuth admin = userRepository.findByUsername("admin").orElseThrow(() -> new RuntimeException("User 'admin' not found."));
-        UserAuth user2 = userRepository.findByUsername("user2").orElseThrow(() -> new RuntimeException("User 'user2' not found."));
-
-        ConversationRequest conversation1 = conversationRequestRepository.findByFromUserAndToUser(user, admin).orElseThrow(() -> new RuntimeException("Conversation from user to admin not found."));
-        ConversationRequest conversation2 = conversationRequestRepository.findByFromUserAndToUser(admin, user).orElseThrow(() -> new RuntimeException("Conversation from admin to user not found."));
-        ConversationRequest conversation3 = conversationRequestRepository.findByFromUserAndToUser(user2, user).orElseThrow(() -> new RuntimeException("Conversation from user2 to user not found."));
+//        UserAuth user = userRepository.findByUsername("user").orElseThrow(() -> new RuntimeException("User 'user' not found."));
+//        UserAuth admin = userRepository.findByUsername("admin").orElseThrow(() -> new RuntimeException("User 'admin' not found."));
+//        UserAuth user2 = userRepository.findByUsername("user2").orElseThrow(() -> new RuntimeException("User 'user2' not found."));
+//
+//        ConversationRequest conversation1 = conversationRequestRepository.findByFromUserAndToUser(user, admin).orElseThrow(() -> new RuntimeException("Conversation from user to admin not found."));
+//        ConversationRequest conversation2 = conversationRequestRepository.findByFromUserAndToUser(admin, user).orElseThrow(() -> new RuntimeException("Conversation from admin to user not found."));
+//        ConversationRequest conversation3 = conversationRequestRepository.findByFromUserAndToUser(user2, user).orElseThrow(() -> new RuntimeException("Conversation from user2 to user not found."));
 
         // 3. 샘플 리뷰 생성
-        Review review1 = Review.builder()
-                .reviewer(user)
-                .reviewee(admin)
-                .conversationRequest(conversation1)
-                .comment("관리자님, 친절한 답변 감사했습니다!")
-                .keywords(filterKeywords(savedKeywords, "친절한", "세심한"))
-                .build();
-
-        Review review2 = Review.builder()
-                .reviewer(admin)
-                .reviewee(user)
-                .conversationRequest(conversation2)
-                .comment("user님과의 대화는 유쾌했습니다.")
-                .keywords(filterKeywords(savedKeywords, "유머있는", "친절한"))
-                .build();
-        
-        Review review3 = Review.builder()
-                .reviewer(user2)
-                .reviewee(user)
-                .conversationRequest(conversation3)
-                .comment("덕분에 운동 많이 배우고 갑니다.")
-                .keywords(filterKeywords(savedKeywords, "리더십 있는", "매너있어요"))
-                .build();
-
-        reviewRepository.saveAll(List.of(review1, review2, review3));
-
-        System.out.println("✅ Sample reviews created.");
+//        Review review1 = Review.builder()
+//                .reviewer(user)
+//                .reviewee(admin)
+//                .conversationRequest(conversation1)
+//                .comment("관리자님, 친절한 답변 감사했습니다!")
+//                .keywords(filterKeywords(savedKeywords, "친절한", "세심한"))
+//                .build();
+//
+//        Review review2 = Review.builder()
+//                .reviewer(admin)
+//                .reviewee(user)
+//                .conversationRequest(conversation2)
+//                .comment("user님과의 대화는 유쾌했습니다.")
+//                .keywords(filterKeywords(savedKeywords, "유머있는", "친절한"))
+//                .build();
+//
+//        Review review3 = Review.builder()
+//                .reviewer(user2)
+//                .reviewee(user)
+//                .conversationRequest(conversation3)
+//                .comment("덕분에 운동 많이 배우고 갑니다.")
+//                .keywords(filterKeywords(savedKeywords, "리더십 있는", "매너있어요"))
+//                .build();
+//
+//        reviewRepository.saveAll(List.of(review1, review2, review3));
+//
+//        System.out.println("✅ Sample reviews created.");
     }
 
     private Set<ReviewKeyword> filterKeywords(Set<ReviewKeyword> keywords, String... texts) {
