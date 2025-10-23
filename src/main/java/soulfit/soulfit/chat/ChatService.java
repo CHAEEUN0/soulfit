@@ -89,6 +89,7 @@ public class ChatService {
 
             String roomDisplayName;
             String roomImageUrl = null; // 이미지 URL 변수 초기화
+            Integer opponentId = null; // opponentId 초기화
 
             if (room.getType() == ChatRoomType.Direct) {
                 // 1:1 채팅방: 상대방 정보에서 이름과 프로필 이미지를 가져온다.
@@ -102,6 +103,7 @@ public class ChatService {
 
                 if (otherUser != null) {
                     roomDisplayName = otherUser.getUsername();
+                    opponentId = otherUser.getId().intValue(); // 상대방 ID 설정
                     if (otherUser.getUserProfile() != null) {
                         roomImageUrl = otherUser.getUserProfile().getProfileImageUrl();
                     }
@@ -111,12 +113,15 @@ public class ChatService {
             } else { // GROUP 타입
                 // 그룹 채팅방: 기존 방 이름과 모임의 대표 이미지를 가져온다.
                 roomDisplayName = room.getName();
-                if (room.getMeeting() != null && room.getMeeting().getImages() != null && !room.getMeeting().getImages().isEmpty()) {
-                    // order를 기준으로 정렬하여 첫 번째 이미지를 대표 이미지로 사용
-                    roomImageUrl = room.getMeeting().getImages().stream()
-                            .min(java.util.Comparator.comparing(soulfit.soulfit.meeting.domain.MeetingImage::getOrder))
-                            .map(soulfit.soulfit.meeting.domain.MeetingImage::getImageUrl)
-                            .orElse(null);
+                if (room.getMeeting() != null) {
+                    opponentId = room.getMeeting().getId().intValue(); // 미팅 ID 설정
+                    if (room.getMeeting().getImages() != null && !room.getMeeting().getImages().isEmpty()) {
+                        // order를 기준으로 정렬하여 첫 번째 이미지를 대표 이미지로 사용
+                        roomImageUrl = room.getMeeting().getImages().stream()
+                                .min(java.util.Comparator.comparing(soulfit.soulfit.meeting.domain.MeetingImage::getOrder))
+                                .map(soulfit.soulfit.meeting.domain.MeetingImage::getImageUrl)
+                                .orElse(null);
+                    }
                 }
             }
 
@@ -126,7 +131,8 @@ public class ChatService {
                     lastMessage != null ? lastMessage.getMessage() : null,
                     room.getUpdatedAt(),
                     unreadCount,
-                    roomImageUrl // DTO에 이미지 URL 추가
+                    roomImageUrl, // DTO에 이미지 URL 추가
+                    opponentId // opponentId 추가
             );
         });
     }
