@@ -8,11 +8,15 @@ import org.springframework.stereotype.Component;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
 import soulfit.soulfit.meeting.domain.*;
+import soulfit.soulfit.meeting.repository.MeetingKeywordRepository;
 import soulfit.soulfit.meeting.repository.MeetingParticipantRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 @Profile("!test")
@@ -23,6 +27,7 @@ public class MeetingDataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final MeetingRepository meetingRepository;
     private final MeetingParticipantRepository meetingParticipantRepository;
+    private final MeetingKeywordRepository meetingKeywordRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -34,6 +39,9 @@ public class MeetingDataInitializer implements CommandLineRunner {
         UserAuth user = userRepository.findByUsername("user").orElseThrow();
         UserAuth user2 = userRepository.findByUsername("user2").orElseThrow();
         UserAuth user3 = userRepository.findByUsername("user3").orElseThrow();
+
+        // Fetch all keywords once
+        List<Keyword> allKeywords = meetingKeywordRepository.findAll();
 
         // === Create Sample Meetings ===
 
@@ -48,6 +56,11 @@ public class MeetingDataInitializer implements CommandLineRunner {
                 .recruitDeadline(LocalDateTime.now().minusMonths(1).minusDays(1))
                 .maxParticipants(10)
                 .meetingStatus(MeetingStatus.FINISHED)
+                .fee(10000)
+                .feeDescription("음료 및 간식 제공")
+                .supplies(List.of("편한 복장", "운동화"))
+                .schedules(List.of("19:00 - 집결", "19:10 - 스트레칭", "19:30 - 런닝 시작", "20:30 - 마무리 스트레칭"))
+                .keywords(getKeywords(allKeywords, "활발한", "신나는", "액티비티", "산책"))
                 .build());
 
         // Meeting 2: Hosted by user3, attended by user (last month, WORKOUT, Seoul)
@@ -61,6 +74,11 @@ public class MeetingDataInitializer implements CommandLineRunner {
                 .recruitDeadline(LocalDateTime.now().minusMonths(1).minusDays(2))
                 .maxParticipants(5)
                 .meetingStatus(MeetingStatus.FINISHED)
+                .fee(0)
+                .feeDescription("스터디룸 비용은 각자 부담")
+                .supplies(List.of("개인 노트북", "필기구"))
+                .schedules(List.of("14:00 - 16:00: 문제 풀이", "16:00 - 17:00: 코드 리뷰"))
+                .keywords(getKeywords(allKeywords, "계획적", "차분한", "I성향", "실내중심"))
                 .build());
 
         // Meeting 3: Hosted by user3, attended by user (2 months ago, FOOD, Busan)
@@ -74,6 +92,11 @@ public class MeetingDataInitializer implements CommandLineRunner {
                 .recruitDeadline(LocalDateTime.now().minusMonths(2).minusDays(1))
                 .maxParticipants(20)
                 .meetingStatus(MeetingStatus.FINISHED)
+                .fee(25000)
+                .feeDescription("1인 1메뉴 필수")
+                .supplies(List.of("배고픈 위장", "활발한 장"))
+                .schedules(List.of("12:00 - 1차", "14:00 - 2차", "16:00 - 카페"))
+                .keywords(getKeywords(allKeywords, "즉흥적", "맛집", "술모임", "E성향"))
                 .build());
 
         // Meeting 4: Hosted by 'user', attended by user2 and user3 (for testing 'received reviews')
@@ -87,6 +110,11 @@ public class MeetingDataInitializer implements CommandLineRunner {
                 .recruitDeadline(LocalDateTime.now().minusWeeks(2).minusDays(1))
                 .maxParticipants(8)
                 .meetingStatus(MeetingStatus.FINISHED)
+                .fee(15000)
+                .feeDescription("치킨, 맥주 및 돗자리 제공")
+                .supplies(List.of("개인 컵", "담요"))
+                .schedules(List.of("18:00 - 여의나루역 집결", "18:30 - 치맥 타임", "21:00 - 정리 및 해산"))
+                .keywords(getKeywords(allKeywords, "편안한", "힐링", "가벼운", "실외중심"))
                 .build());
 
         // === Create Sample Participations ===
@@ -114,5 +142,12 @@ public class MeetingDataInitializer implements CommandLineRunner {
         participant.setApprovalStatus(ApprovalStatus.APPROVED);
         participant.setJoinedAt(meeting.getRecruitDeadline());
         return participant;
+    }
+
+    private Set<Keyword> getKeywords(List<Keyword> allKeywords, String... names) {
+        List<String> nameList = Arrays.asList(names);
+        return allKeywords.stream()
+                .filter(keyword -> nameList.contains(keyword.getName()))
+                .collect(Collectors.toSet());
     }
 }
