@@ -14,8 +14,8 @@ public class RestTemplateConfig {
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000);
-        requestFactory.setReadTimeout(5000);
+        requestFactory.setConnectTimeout(30000);
+        requestFactory.setReadTimeout(30000);
 
         restTemplate.setRequestFactory(requestFactory);
 
@@ -25,12 +25,12 @@ public class RestTemplateConfig {
     @Bean
     @Qualifier("aiRestTemplate")
     public RestTemplate aiRestTemplate(
-        @Qualifier("snakeCaseObjectMapper") ObjectMapper snakeCaseObjectMapper
+            @Qualifier("snakeCaseObjectMapper") ObjectMapper snakeCaseObjectMapper
     ) {
         RestTemplate restTemplate = new RestTemplate();
         SimpleClientHttpRequestFactory requestFactory = new SimpleClientHttpRequestFactory();
-        requestFactory.setConnectTimeout(5000);
-        requestFactory.setReadTimeout(5000);
+        requestFactory.setConnectTimeout(30000);
+        requestFactory.setReadTimeout(30000);
         restTemplate.setRequestFactory(requestFactory);
 
         restTemplate.getMessageConverters().clear();
