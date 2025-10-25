@@ -101,7 +101,7 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
             String drinkingStatusFilter
     ) {
         if (regionFilter != null && !regionFilter.isEmpty()) {
-            builder.and(userProfile.region.equalsIgnoreCase(regionFilter));
+            builder.and(userProfile.region.startsWithIgnoreCase(regionFilter));
         }
 
         if (minHeight != null) {
