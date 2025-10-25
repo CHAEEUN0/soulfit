@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 import soulfit.soulfit.authentication.entity.UserAuth;
@@ -32,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest
+@ActiveProfiles("test")
 class MeetingServiceTest {
 
     @Autowired UserRepository userRepository;
@@ -132,7 +134,13 @@ class MeetingServiceTest {
                 .collect(Collectors.toSet());
         assertThat(savedKeywordNames).containsExactlyInAnyOrderElementsOf(List.of("신나는"));
 
-        MeetingResponseDto responseDto = MeetingResponseDto.from(updated);
+        // Assertions for the detailed DTO returned by getMeetingById
+        MeetingResponseDto responseDto = meetingService.getMeetingById(updated.getId());
+        assertThat(responseDto.getPricePerPerson()).isEqualTo(0);
+        assertThat(responseDto.getHostName()).isEqualTo(user.getUsername());
+        assertThat(responseDto.getSchedules()).containsExactly("러닝", "식사");
+        assertThat(responseDto.getSupplies()).containsExactly("러닝화", "물");
+        assertThat(responseDto.getImageUrls().size()).isEqualTo(2);
 
         System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(responseDto));
 
@@ -196,7 +204,7 @@ class MeetingServiceTest {
 
         Pageable pageable = PageRequest.of(0, 10);
 
-        Page<Meeting> result = meetingService.filterMeetings(filter, pageable);
+        Page<MeetingResponseDto> result = meetingService.filterMeetings(filter, pageable);
 
 
         System.out.println("총 결과 개수 = " + result.getTotalElements());
@@ -208,11 +216,8 @@ class MeetingServiceTest {
         System.out.println("==== 검색 결과 리스트 ====");
         result.getContent().forEach(m -> {
             System.out.println("제목: " + m.getTitle()
-                    + ", city: " + m.getLocation().getCity()
-                    + ", district: " + m.getLocation().getDistrict()
-                    + ", fee: " + m.getFee()
-                    + ", meetingTime: " + m.getMeetingTime()
-                    + ", canPickup: " + m.isCanPickup());
+                    + ", category: " + m.getCategory()
+                    + ", status: " + m.getStatus());
         });
 
     }

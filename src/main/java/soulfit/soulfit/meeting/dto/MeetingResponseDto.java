@@ -2,7 +2,8 @@ package soulfit.soulfit.meeting.dto;
 
 import lombok.Builder;
 import lombok.Data;
-import soulfit.soulfit.meeting.domain.*;
+import soulfit.soulfit.meeting.domain.Category;
+import soulfit.soulfit.meeting.domain.MeetingStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -15,64 +16,46 @@ public class MeetingResponseDto {
     private String title;
     private String description;
     private Category category;
-    private Location location;
 
-    private int fee;
-    private String feeDescription;
+    // Host
+    private String hostName;
+    private String hostProfileImageUrl;
 
-    private List<String> supplies;
-    private List<String> schedules;
+    // Images & Keywords
     private List<String> imageUrls;
     private List<String> keywords;
 
+    // D-day
+    private String ddayBadge;
 
+    // Schedule & Location
+    private List<String> schedules;
+    private String fullAddress; // meetPlaceAddress, venuePlaceAddress 통합
     private boolean canPickup;
-
     private LocalDateTime meetingTime;
     private Integer duration;
-
     private LocalDateTime recruitDeadline;
+
+    // Participants
     private int maxParticipants;
-
-    private MeetingStatus status;
-
     private int currentParticipants;
+    private ParticipantStatsDto participantStats;
 
+    // Reviews
+    private int reviewCount;
+    private double reviewAvg;
+    private String reviewSummary;
+    private List<MeetingReviewResponseDto> reviews;
+
+    // Supplies & Price
+    private List<String> supplies;
+    private int pricePerPerson; // fee -> pricePerPerson
+    private String feeDescription;
+
+    // Status & Timestamps
+    private MeetingStatus status;
     private LocalDateTime createdAt;
 
+    // AI Recommendation
     private List<String> recommendationReasons;
-
-    //호스트 정보, 리뷰 평균평점, 리뷰 추가
-
-
-
-    public static MeetingResponseDto from(Meeting meeting) {
-        return MeetingResponseDto.builder()
-                .id(meeting.getId())
-                .title(meeting.getTitle())
-                .description(meeting.getDescription())
-                .category(meeting.getCategory())
-                .location(meeting.getLocation())
-                .fee(meeting.getFee())
-                .feeDescription(meeting.getFeeDescription())
-                .supplies(meeting.getSupplies())
-                .schedules(meeting.getSchedules())
-                .imageUrls(meeting.getImages()
-                                .stream()
-                                .map(MeetingImage::getImageUrl)
-                                .toList())
-                .keywords(meeting.getKeywords()
-                                .stream()
-                                .map(Keyword::getName)
-                                .toList())
-                .canPickup(meeting.isCanPickup())
-                .meetingTime(meeting.getMeetingTime())
-                .duration(meeting.getDuration())
-                .recruitDeadline(meeting.getRecruitDeadline())
-                .maxParticipants(meeting.getMaxParticipants())
-                .status(meeting.getMeetingStatus())
-                .currentParticipants(meeting.getCurrentParticipants())
-                .createdAt(meeting.getCreatedAt())
-                .build();
-    }
 }
