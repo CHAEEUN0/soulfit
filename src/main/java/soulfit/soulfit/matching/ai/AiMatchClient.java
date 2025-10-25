@@ -6,6 +6,9 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import soulfit.soulfit.matching.ai.dto.AiMatchResultDto;
+
+import java.util.Arrays;
 
 @Component
 @Slf4j
@@ -21,11 +24,14 @@ public class AiMatchClient {
     }
 
     public AiMatchResponseDto match(AiMatchRequestDto requestDto) {
-        return restTemplate.postForObject(
-                aiServerUrl+"/matching/match-users",
+        AiMatchResultDto[] results = restTemplate.postForObject(
+                aiServerUrl + "/matching/match-users",
                 requestDto,
-                AiMatchResponseDto.class
+                AiMatchResultDto[].class
         );
+        if (results == null) {
+            return new AiMatchResponseDto();
+        }
+        return new AiMatchResponseDto(Arrays.asList(results));
     }
 }
-
