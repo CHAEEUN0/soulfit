@@ -11,7 +11,11 @@ import soulfit.soulfit.meeting.domain.Meeting;
 import soulfit.soulfit.meeting.domain.MeetingBookmark;
 import soulfit.soulfit.meeting.repository.MeetingBookmarkRepository;
 import soulfit.soulfit.meeting.repository.MeetingRepository;
+import soulfit.soulfit.meeting.dto.MeetingResponseDto;
+import soulfit.soulfit.meeting.domain.MeetingImage;
+
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -40,8 +44,19 @@ public class MeetingBookmarkService {
     }
 
     @Transactional(readOnly = true)
-    public Page<Meeting> getBookmarkedMeetingsByUser(UserAuth user, Pageable pageable) {
+    public Page<MeetingResponseDto> getBookmarkedMeetingsByUser(UserAuth user, Pageable pageable) {
         return meetingBookmarkRepository.findByUserOrderByCreatedAtDesc(user, pageable)
-                .map(MeetingBookmark::getMeeting);
+                .map(MeetingBookmark::getMeeting)
+                .map(this::mapToSimpleDto);
+    }
+
+    private MeetingResponseDto mapToSimpleDto(Meeting meeting) {
+        return MeetingResponseDto.builder()
+                .id(meeting.getId())
+                .title(meeting.getTitle())
+                .category(meeting.getCategory())
+                .status(meeting.getMeetingStatus())
+                .imageUrls(meeting.getImages().stream().map(MeetingImage::getImageUrl).collect(Collectors.toList()))
+                .build();
     }
 }

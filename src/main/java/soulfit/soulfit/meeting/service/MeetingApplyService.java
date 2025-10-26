@@ -204,8 +204,18 @@ public class MeetingApplyService {
 
     public List<MeetingResponseDto> getMeetingsByHost(UserAuth userAuth) {
         return meetingRepository.findByHost(userAuth).stream()
-                .map(MeetingResponseDto::from)
+                .map(this::mapToSimpleDto)
                 .collect(Collectors.toList());
+    }
+
+    private MeetingResponseDto mapToSimpleDto(Meeting meeting) {
+        return MeetingResponseDto.builder()
+                .id(meeting.getId())
+                .title(meeting.getTitle())
+                .category(meeting.getCategory())
+                .status(meeting.getMeetingStatus())
+                .imageUrls(meeting.getImages().stream().map(MeetingImage::getImageUrl).collect(Collectors.toList()))
+                .build();
     }
 
 }
