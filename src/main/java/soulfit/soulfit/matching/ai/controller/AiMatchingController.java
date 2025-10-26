@@ -2,20 +2,17 @@ package soulfit.soulfit.matching.ai.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import soulfit.soulfit.authentication.dto.MessageResponse;
 import soulfit.soulfit.authentication.entity.UserAuth;
+import soulfit.soulfit.matching.ai.AiApiResponseDto;
 import soulfit.soulfit.matching.ai.AiMatchResponseDto;
 import soulfit.soulfit.matching.ai.AiMatchService;
 import soulfit.soulfit.matching.ai.dto.ClientAiMatchRequestDto;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/matching")
