@@ -23,15 +23,15 @@ public class AiMatchClient {
         this.restTemplate = restTemplate;
     }
 
-    public AiMatchResponseDto match(AiMatchRequestDto requestDto) {
+    public AiApiResponseDto match(AiMatchRequestDto requestDto) {
         AiMatchResultDto[] results = restTemplate.postForObject(
                 aiServerUrl + "/matching/match-users",
                 requestDto,
                 AiMatchResultDto[].class
         );
         if (results == null) {
-            return new AiMatchResponseDto();
+            return new AiApiResponseDto();
         }
-        return new AiMatchResponseDto(Arrays.asList(results));
+        return new AiApiResponseDto(Arrays.asList(results));
     }
 }

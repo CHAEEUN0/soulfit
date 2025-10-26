@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import soulfit.soulfit.authentication.entity.UserAuth;
 import soulfit.soulfit.authentication.repository.UserRepository;
-import soulfit.soulfit.matching.ai.dto.AiMatchResultDto;
 import soulfit.soulfit.matching.ai.dto.AiUserDto;
 import soulfit.soulfit.matching.ai.dto.ClientMatchResultDto;
 import soulfit.soulfit.valuestest.service.TestService;
@@ -40,18 +39,18 @@ public class AiMatchService {
         AiMatchRequestDto requestDto = new AiMatchRequestDto(targetUserDto, candidateUserDtos);
 
         // 4. Call AI server
-        AiMatchResponseDto aiResponse = aiMatchClient.match(requestDto);
+        AiApiResponseDto aiResponse = aiMatchClient.match(requestDto);
 
         // 5. Enrich AI match results with username and profile image URL
         List<ClientMatchResultDto> enrichedResults = aiResponse.getAiMatchResults().stream()
                 .map(aiMatchResultDto -> {
-                    Optional<UserAuth> userAuthOptional = userRepository.findByIdWithProfile(aiMatchResultDto.getAiMatchResult().getUserId());
+                    Optional<UserAuth> userAuthOptional = userRepository.findByIdWithProfile(aiMatchResultDto.getUserId());
                     String username = userAuthOptional.map(UserAuth::getUsername).orElse("Unknown");
                     String profileImageUrl = userAuthOptional.map(UserAuth::getUserProfile)
                             .map(userProfile -> userProfile.getProfileImageUrl() != null ? userProfile.getProfileImageUrl() : "default_profile_image_url")
                             .orElse("default_profile_image_url");
 
-                    return new ClientMatchResultDto(aiMatchResultDto.getAiMatchResult(), username, profileImageUrl);
+                    return new ClientMatchResultDto(aiMatchResultDto, username, profileImageUrl);
                 })
                 .collect(Collectors.toList());
 
