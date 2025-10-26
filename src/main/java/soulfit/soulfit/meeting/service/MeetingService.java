@@ -142,16 +142,17 @@ public class MeetingService {
                 .collect(Collectors.toList());
 
         // Review Summary (AI)
-        String reviewSummary = "";
-        if (reviewCount > 0) {
-            try {
-                AiReviewResponseDto summaryResponse = aiReviewAnalysisService.analyzeReviewsByRestTemplate(reviews);
-                reviewSummary = summaryResponse.getSummary();
-            } catch (Exception e) {
-                // AI 서버 실패 시 로그를 남기거나 기본값을 사용
-                reviewSummary = "리뷰 요약을 가져오는 데 실패했습니다.";
-            }
-        }
+        // TODO: AI 리뷰 요약 기능 연동 필요. 현재는 타임아웃 문제로 비활성화.
+        String reviewSummary = "리뷰 요약을 가져오는 중입니다.";
+//        if (reviewCount > 0) {
+//            try {
+//                AiReviewResponseDto summaryResponse = aiReviewAnalysisService.analyzeReviewsByRestTemplate(reviews);
+//                reviewSummary = summaryResponse.getSummary();
+//            } catch (Exception e) {
+//                // AI 서버 실패 시 로그를 남기거나 기본값을 사용
+//                reviewSummary = "리뷰 요약을 가져오는 데 실패했습니다.";
+//            }
+//        }
 
         // Participant Stats
         ParticipantStatsDto participantStats = calculateParticipantStats(meeting);
